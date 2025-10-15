@@ -1,98 +1,181 @@
 # Scaffold MCP Server
 
-一个基于 Model Context Protocol (MCP) 的项目脚手架生成服务器，支持快速创建现代化的前端项目。
+一个强大的 MCP (Model Context Protocol) 服务器，用于生成前端项目脚手架。支持 React、Vue、UmiJS、Electron 等多种模板。
 
-## 功能特性
+## ✨ 特性
 
-- 🚀 支持多种前端框架 (React, Vue, Angular)
-- ⚡ 支持多种构建工具 (Webpack, Vite, Rollup)
-- 🎨 支持多种 UI 库 (Ant Design, Element Plus, Material-UI)
-- 📦 支持多种状态管理 (Redux, Pinia, Vuex, MobX)
-- 🛠️ 自动生成项目结构和配置文件
-- 🔧 集成常用开发工具配置
-- 📝 完整的 TypeScript 支持
-- 🎯 预配置的测试环境
+- 🚀 支持多种前端框架模板
+- 📦 完整的项目结构生成
+- 🔧 TypeScript 支持
+- 🎨 现代化的构建工具配置
+- 🔌 MCP 协议兼容
+- 🛠️ 自动化配置脚本
 
-## 可用模板
+## 📋 支持的模板
 
-### React + TypeScript + Webpack
-- React 19.2.0 + TypeScript
-- Ant Design UI 组件库
-- Redux Toolkit 状态管理
-- React Router 路由管理
-- Tailwind CSS 样式框架
-- Jest + Testing Library 测试配置
+- **react-webpack-typescript** - React + Webpack + TypeScript
+- **vue3-vite-typescript** - Vue 3 + Vite + TypeScript  
+- **umijs** - UmiJS 框架
+- **electron-vite-vue3** - Electron + Vite + Vue 3
 
-### Vue 3 + TypeScript + Vite
-- Vue 3.5.22 + TypeScript
-- Element Plus UI 组件库
-- Pinia 状态管理
-- Vue Router 路由管理
-- Tailwind CSS 样式框架
-- Vite 快速构建工具
+## 🚀 快速开始
 
-## 安装
+### 自动化配置（推荐）
 
+使用我们提供的自动化脚本快速配置：
+
+**macOS/Linux:**
 ```bash
-npm install
+git clone <repository-url>
+cd scaffold-mcp-server
+./scripts/setup-mcp.sh
 ```
 
-## 构建
+**Windows:**
+```cmd
+git clone <repository-url>
+cd scaffold-mcp-server
+scripts\setup-mcp.bat
+```
+
+### 手动安装
+
+1. **克隆项目**
+   ```bash
+   git clone <repository-url>
+   cd scaffold-mcp-server
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **构建项目**
+   ```bash
+   npm run build
+   ```
+
+4. **测试服务器**
+   ```bash
+   npm test
+   ```
+
+## 🔧 工具集成
+
+本项目支持以下 AI 开发工具：
+
+- **Cursor** - AI 代码编辑器
+- **Trae AI** - 智能开发环境
+- **Cline** - VS Code AI 助手
+- **Claude Desktop** - Anthropic 桌面应用
+- **Continue.dev** - VS Code AI 扩展
+- **Aider** - AI 编程助手
+
+详细配置说明请查看 [MCP 集成指南](./MCP_INTEGRATION_GUIDE.md)。
+
+## 📖 使用方法
+
+配置完成后，你可以在支持的工具中使用自然语言命令：
+
+```
+创建一个 React TypeScript 项目
+生成 Vue 3 项目脚手架
+使用 umijs 模板创建项目
+```
+
+## 🛠️ 开发
+
+### 项目结构
+
+```
+scaffold-mcp-server/
+├── src/                    # 源代码
+│   ├── index.ts           # 主入口文件
+│   ├── tools/             # MCP 工具实现
+│   └── templates/         # 模板管理
+├── scaffold-template/      # 项目模板
+│   ├── react-webpack-typescript/
+│   ├── vue3-vite-typescript/
+│   ├── umijs/
+│   └── electron-vite-vue3/
+├── scripts/               # 配置脚本
+│   ├── setup-mcp.sh      # Unix 配置脚本
+│   └── setup-mcp.bat     # Windows 配置脚本
+├── examples/              # 配置示例
+└── test-templates/        # 测试文件
+```
+
+### 开发命令
 
 ```bash
+# 开发模式
+npm run dev
+
+# 构建
 npm run build
+
+# 测试
+npm test
+
+# 类型检查
+npm run type-check
+
+# 代码格式化
+npm run format
 ```
 
-## 使用
+## 🔍 故障排除
 
-启动 MCP 服务器后，可以通过 MCP 客户端调用 `generateScaffold` 工具来生成项目脚手架。
+### 常见问题
 
-### 参数
+1. **Node.js 版本要求**
+   - 需要 Node.js >= 16.0.0
 
-- `project_name`: 项目名称
-- `tech_stack`: 技术栈配置对象
+2. **构建失败**
+   ```bash
+   # 清理并重新安装
+   rm -rf node_modules dist
+   npm install
+   npm run build
+   ```
 
-### 示例
+3. **MCP 服务器无响应**
+   ```bash
+   # 测试服务器
+   echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js
+   ```
 
-**React 项目：**
-```json
-{
-  "project_name": "my-react-app",
-  "tech_stack": {
-    "framework": "react",
-    "language": "typescript",
-    "builder": "webpack",
-    "ui": "antd",
-    "state": "redux",
-    "router": "react-router"
-  }
-}
-```
+4. **模板生成失败**
+   - 检查目标目录是否已存在
+   - 确保有足够的磁盘空间
+   - 验证文件权限
 
-**Vue 项目：**
-```json
-{
-  "project_name": "my-vue-app",
-  "tech_stack": {
-    "framework": "vue",
-    "language": "typescript",
-    "builder": "umi",
-    "ui": "element-plus",
-    "state": "dva",
-    "router": "umi-router"
-  }
-}
-```
+### 日志调试
 
-## 测试
-
-项目包含了完整的测试脚本，可以验证模板生成功能：
+设置环境变量启用详细日志：
 
 ```bash
-cd test-templates
-node test-scaffold.js
+export DEBUG=scaffold-mcp:*
+node dist/index.js
 ```
 
-## 文档
+## 📄 许可证
 
-详细的使用指南请参考 [TEMPLATE_GUIDE.md](./TEMPLATE_GUIDE.md)。
+MIT License
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📞 支持
+
+如果你遇到问题或有建议，请：
+
+1. 查看 [MCP 集成指南](./MCP_INTEGRATION_GUIDE.md)
+2. 搜索现有的 Issues
+3. 创建新的 Issue 描述问题
+
+---
+
+**享受使用 Scaffold MCP Server 创建项目的乐趣！** 🎉

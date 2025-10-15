@@ -138,15 +138,19 @@ class ScaffoldMCPServer {
 
 📁 项目名称: ${result.projectName}
 📍 生成路径: ${result.targetPath}
+🔧 模板来源: ${result.templateSource || '未知'}
 
 📊 生成统计:
 - 总文件数: ${result.files.length}
-- 目录结构: ${this.formatDirectoryTree(result.tree)}
+- 目录结构: 
+${this.formatDirectoryTree(result.tree)}
 
-📋 文件清单:
-${result.files.map(file => `  - ${file.path} (${file.size} bytes)`).join('\n')}
+🎉 项目已成功创建，可以开始开发了！
 
-🎉 项目已成功创建，可以开始开发了！`
+💡 快速开始:
+  cd ${result.projectName}
+  npm install
+  npm start`
           }
         ]
       };

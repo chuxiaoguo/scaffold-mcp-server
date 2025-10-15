@@ -31,6 +31,7 @@ export interface GenerateResult {
   targetPath: string;
   tree: DirectoryTree;
   files: FileSummary[];
+  templateSource?: string; // 模板来源信息
 }
 
 export interface DirectoryTree {
@@ -52,4 +53,27 @@ export interface TemplateConfig {
   techStack: TechStack;
   aliases: string[];
   description: string;
+}
+
+// 配置驱动模板匹配相关类型
+export interface TemplateMatchingRules {
+  required?: (keyof TechStack)[];
+  core: Partial<Record<keyof TechStack, string[]>>;
+  optional?: Partial<Record<keyof TechStack, string[]>>;
+  conflicts?: string[];
+}
+
+export interface UnifiedTemplateInfo {
+  name: string;
+  version?: string;
+  description?: string;
+  matching: TemplateMatchingRules;
+  priority?: number;
+  tags?: string[];
+}
+
+export interface TemplatesConfigIndex {
+  version: string;
+  lastUpdated: string;
+  templates: Record<string, UnifiedTemplateInfo>;
 }

@@ -1,91 +1,17 @@
-import type { TechStack, TemplateConfig } from '../types/index.js';
+import type { TechStack, TemplateConfig, TemplatesConfigIndex, UnifiedTemplateInfo } from '../types/index.js';
+import { IntentRecognizer } from './intentRecognizer.js';
+import { getTemplateConfigManager } from './config/templateConfigManager.js';
 
-// 固定模板配置
-const FIXED_TEMPLATES: TemplateConfig[] = [
-  {
-    name: 'vue3-vite-typescript',
-    techStack: {
-      framework: 'vue3',
-      builder: 'vite',
-      language: 'typescript',
-      router: 'vue-router',
-      state: 'pinia',
-      ui: 'element-plus',
-      style: 'tailwindcss',
-      packageManager: 'pnpm'
-    },
-    aliases: [
-      'vue3+ts',
-      'vue3+typescript',
-      'vue3-ts',
-      'vue3-typescript',
-      'vue3+vite+ts',
-      'vue3+vite+typescript'
-    ],
-    description: 'Vue3 + Vite + TypeScript + Element Plus + Pinia + Vue Router + TailwindCSS'
-  },
-  {
-    name: 'electron-vite-vue3',
-    techStack: {
-      framework: 'vue3',
-      builder: 'electron-vite',
-      language: 'typescript',
-      router: 'vue-router',
-      state: 'pinia',
-      ui: 'element-plus',
-      style: 'tailwindcss',
-      packageManager: 'pnpm'
-    },
-    aliases: [
-      'electron+vue3',
-      'electron+vue3+ts',
-      'electron-vue3',
-      'electron-vue3-ts'
-    ],
-    description: 'Electron + Vite + Vue3 + TypeScript + Element Plus + Pinia + Vue Router + TailwindCSS'
-  },
-  {
-    name: 'react-webpack-typescript',
-    techStack: {
-      framework: 'react',
-      builder: 'webpack',
-      language: 'typescript',
-      router: 'react-router',
-      state: 'redux',
-      ui: 'antd',
-      style: 'tailwindcss',
-      packageManager: 'npm'
-    },
-    aliases: [
-      'react+webpack+ts',
-      'react+webpack+typescript',
-      'react-webpack-ts',
-      'cra+ts',
-      'create-react-app+ts'
-    ],
-    description: 'React + Webpack + TypeScript + Ant Design + Redux + TailwindCSS'
-  },
-  {
-    name: 'umijs',
-    techStack: {
-      framework: 'react',
-      builder: 'umi',
-      language: 'typescript',
-      router: 'umi-router',
-      state: 'dva',
-      ui: 'antd',
-      style: 'tailwindcss',
-      packageManager: 'pnpm'
-    },
-    aliases: [
-      'umi',
-      'umijs+react',
-      'umi+antd',
-      'umi+ts'
-    ],
-    description: 'UmiJS + React + TypeScript + Ant Design + DVA + TailwindCSS'
-  }
-];
+// 固定模板配置（通过模板配置索引驱动）
+let TEMPLATES_INDEX_CACHE: TemplatesConfigIndex | null = null;
+
+async function loadTemplatesIndex(): Promise<TemplatesConfigIndex | null> {
+  if (TEMPLATES_INDEX_CACHE) return TEMPLATES_INDEX_CACHE;
+  const manager = getTemplateConfigManager();
+  const idx = await manager.getTemplatesIndex();
+  TEMPLATES_INDEX_CACHE = idx;
+  return idx;
+}
 
 // 技术栈别名映射
 const TECH_ALIASES: Record<string, string> = {
@@ -163,43 +89,76 @@ export function parseTechStack(input: string | string[]): TechStack {
 /**
  * 匹配固定模板
  */
-export function matchFixedTemplate(input: string | string[]): TemplateConfig | null {
-  const inputStr = Array.isArray(input) ? input.join(' ') : input;
-  const normalized = normalizeInput(inputStr);
-  
-  // 直接匹配别名
-  for (const template of FIXED_TEMPLATES) {
-    for (const alias of template.aliases) {
-      if (normalized === normalizeInput(alias)) {
-        return template;
-      }
-    }
-  }
-  
-  // 解析技术栈进行匹配
+export async function matchFixedTemplate(input: string | string[]): Promise<TemplateConfig | null> {
+  // 使用配置驱动的智能匹配（配置索引）
+  const result = await smartMatchFixedTemplate(input);
+  return result.template;
+}
+
+/**
+ * 智能匹配固定模板（新增函数）
+ * 使用IntentRecognizer进行更智能的匹配
+ */
+export async function smartMatchFixedTemplate(input: string | string[]): Promise<{
+  template: TemplateConfig | null;
+  analysis: {
+    canUseFixedTemplate: boolean;
+    recommendedTemplate?: string;
+    reason: string;
+    suggestions?: string[];
+  };
+}> {
   const parsedStack = parseTechStack(input);
-  
-  for (const template of FIXED_TEMPLATES) {
-    if (isTechStackMatch(parsedStack, template.techStack)) {
-      return template;
-    }
+  const techTokens = extractTechnologies(Array.isArray(input) ? input.join(' ') : String(input));
+  const best = await computeBestMatch(parsedStack, techTokens);
+
+  if (!best) {
+    const old = IntentRecognizer.analyzeTechStack(parsedStack);
+    return {
+      template: old.recommendedTemplate ? { name: old.recommendedTemplate, description: old.recommendedTemplate, techStack: {}, aliases: [] } as unknown as TemplateConfig : null,
+      analysis: old
+    };
   }
-  
-  return null;
+
+  const tmpl: TemplateConfig = {
+    name: best.entry.name,
+    description: best.entry.description || best.entry.name,
+    techStack: {
+      framework: (best.entry.matching.core.framework || [])[0] as any,
+      builder: (best.entry.matching.core.builder || [])[0] as any,
+      language: (best.entry.matching.core.language || [])[0] as any
+    },
+    aliases: []
+  };
+
+  return {
+    template: tmpl,
+    analysis: {
+      canUseFixedTemplate: true,
+      recommendedTemplate: best.entry.name,
+      reason: `匹配到配置模板 ${best.entry.name}，得分 ${best.score}`,
+      suggestions: [`优先使用固定模板以获得更稳定的脚手架`]
+    }
+  };
 }
 
 /**
  * 获取所有固定模板
  */
 export function getFixedTemplates(): TemplateConfig[] {
-  return FIXED_TEMPLATES;
+  // 兼容旧接口：将配置索引映射为 TemplateConfig（最小字段）
+  const fallback: TemplateConfig[] = [];
+  // 注意：此函数为同步接口，返回空列表或占位。调用方应使用 smartMatchFixedTemplate。
+  return fallback;
 }
 
 /**
  * 根据名称获取模板
  */
 export function getTemplateByName(name: string): TemplateConfig | null {
-  return FIXED_TEMPLATES.find(template => template.name === name) || null;
+  // 通过配置索引查找
+  // 由于该函数为同步接口，提供最小兼容：返回仅包含名称的模板占位
+  return { name, description: name, techStack: {}, aliases: [] } as unknown as TemplateConfig;
 }
 
 // 辅助函数
@@ -208,21 +167,37 @@ export function getTemplateByName(name: string): TemplateConfig | null {
  * 标准化输入字符串
  */
 function normalizeInput(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[+\s-_]/g, '')
-    .replace(/[^\w]/g, '');
+  return input.toLowerCase().trim();
 }
 
 /**
  * 从字符串中提取技术栈
  */
 function extractTechnologies(input: string): string[] {
-  // 分割字符串
-  const separators = /[+\s,;|&-]+/;
-  return input.split(separators)
+  // 分割字符串，但保持element-plus作为整体
+  const separators = /[+\s,;|&]+/;
+  const parts = input.split(separators)
     .map(tech => tech.trim())
     .filter(tech => tech.length > 0);
+  
+  // 处理element-plus的特殊情况
+  const result: string[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    const current = parts[i];
+    if (!current) continue; // 跳过空值
+    
+    const next = i + 1 < parts.length ? parts[i + 1] : undefined;
+    
+    // 如果当前是element，下一个是plus，合并为element-plus
+    if (current === 'element' && next === 'plus') {
+      result.push('element-plus');
+      i++; // 跳过下一个
+    } else {
+      result.push(current);
+    }
+  }
+  
+  return result;
 }
 
 /**
@@ -235,8 +210,8 @@ function assignTechToStack(techStack: TechStack, tech: string): void {
   }
   
   // 构建工具
-  if (['vite', 'webpack', 'electron-vite'].includes(tech)) {
-    techStack.builder = tech as 'vite' | 'webpack' | 'electron-vite';
+  if (['vite', 'webpack', 'electron-vite', 'umi'].includes(tech)) {
+    techStack.builder = tech as 'vite' | 'webpack' | 'electron-vite' | 'umi';
   }
   
   // 语言
@@ -294,3 +269,61 @@ function isTechStackMatch(parsed: TechStack, template: TechStack): boolean {
   
   return true;
 }
+
+/**
+ * 使用模板配置索引计算最优匹配
+ */
+async function computeBestMatch(parsedStack: TechStack, techTokens: string[]): Promise<{ entry: UnifiedTemplateInfo; score: number } | null> {
+  const index = await loadTemplatesIndex();
+  if (!index) return null;
+
+  let best: { entry: UnifiedTemplateInfo; score: number } | null = null;
+
+  for (const entry of Object.values(index.templates)) {
+    const conflicts = entry.matching.conflicts || [];
+    const hasConflict = conflicts.some(c => techTokens.includes(c.toLowerCase()));
+    if (hasConflict) continue;
+
+    let score = 0;
+    // 核心字段评分：存在于用户输入且命中配置的，每个+100
+    const required = entry.matching.required || ['framework'];
+    const core = entry.matching.core || {};
+
+    // 框架必须命中
+    const frameworkOk = parsedStack.framework && (core.framework || []).includes(parsedStack.framework);
+    if (!frameworkOk) continue;
+    if (parsedStack.framework) score += 100;
+
+    // 构建工具（如用户提供则必须命中）
+    if (parsedStack.builder) {
+      const builderOk = (core.builder || []).includes(parsedStack.builder);
+      if (!builderOk) continue;
+      score += 100;
+    }
+
+    // 语言（如果用户提供则参与评分，不作为硬性过滤）
+    if (parsedStack.language) {
+      const langOk = (core.language || []).includes(parsedStack.language);
+      if (langOk) score += 100;
+    }
+
+    // 可选项评分：每命中一项+10
+    const optional = entry.matching.optional || {};
+    for (const [key, values] of Object.entries(optional)) {
+      const field = key as keyof TechStack;
+      const val = parsedStack[field];
+      if (val && (values || []).includes(val)) {
+        score += 10;
+      }
+    }
+
+    if (!best || score > best.score || (score === best.score && (entry.priority || 0) > (best.entry.priority || 0))) {
+      best = { entry, score };
+    }
+  }
+
+  return best;
+}
+
+// 覆盖 smartMatchFixedTemplate 的实现，利用 computeBestMatch
+// 删除同步包装，统一使用异步 API
