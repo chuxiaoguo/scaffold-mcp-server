@@ -32,6 +32,7 @@ export interface GenerateResult {
   tree: DirectoryTree;
   files: FileSummary[];
   templateSource?: string; // 模板来源信息
+  processLogs?: string[]; // 过程日志，用于排查问题（后续会移除）
 }
 
 export interface DirectoryTree {

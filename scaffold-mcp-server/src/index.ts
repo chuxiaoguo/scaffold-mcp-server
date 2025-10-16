@@ -130,6 +130,35 @@ class ScaffoldMCPServer {
     try {
       const result = await generateScaffold(params);
       
+      // 检查生成是否成功
+      if (result.templateSource === 'failed' || result.templateSource?.startsWith('生成失败')) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `❌ 脚手架生成失败！
+
+📁 项目名称: ${result.projectName}
+📍 目标路径: ${result.targetPath}
+🔧 失败原因: ${result.templateSource || '未知错误'}
+
+📊 生成统计:
+- 总文件数: ${result.files.length}
+- 目录结构: ${result.tree.name}
+
+${result.processLogs && result.processLogs.length > 0 ? `🔍 过程日志:
+${result.processLogs.map(log => `  ${log}`).join('\n')}
+
+` : ''}💡 建议:
+1. 检查网络连接是否正常
+2. 确认模板配置是否正确
+3. 查看详细错误日志`
+            }
+          ],
+          isError: true
+        };
+      }
+      
       return {
         content: [
           {
@@ -145,7 +174,10 @@ class ScaffoldMCPServer {
 - 目录结构: 
 ${this.formatDirectoryTree(result.tree)}
 
-🎉 项目已成功创建，可以开始开发了！
+${result.processLogs && result.processLogs.length > 0 ? `🔍 过程日志:
+${result.processLogs.map(log => `  ${log}`).join('\n')}
+
+` : ''}🎉 项目已成功创建，可以开始开发了！
 
 💡 快速开始:
   cd ${result.projectName}

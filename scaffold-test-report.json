@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-10-16T09:01:05.744Z",
+  "results": {
+    "服务器状态检查": true,
+    "模板匹配测试": true,
+    "脚手架生成测试": true,
+    "性能测试": true
+  },
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "successRate": 100
+  }
+}

@@ -2,6 +2,7 @@ import type { TechStack, GenerateOptions } from '../../types/index.js';
 import { ViteBuilder } from './viteBuilder.js';
 import { WebpackBuilder } from './webpackBuilder.js';
 import { ElectronViteBuilder } from './electronViteBuilder.js';
+import { UmiBuilder } from './umiBuilder.js';
 
 export interface BuilderResult {
   files: Record<string, string>;
@@ -24,6 +25,7 @@ export class NonFixedBuilder {
     this.builders.set('vite', new ViteBuilder());
     this.builders.set('webpack', new WebpackBuilder());
     this.builders.set('electron-vite', new ElectronViteBuilder());
+    this.builders.set('umi', new UmiBuilder());
   }
 
   /**
