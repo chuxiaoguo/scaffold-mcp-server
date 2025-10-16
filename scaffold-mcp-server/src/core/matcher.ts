@@ -27,6 +27,7 @@ const TECH_ALIASES: Record<string, string> = {
   'vite.js': 'vite',
   'webpack.js': 'webpack',
   'electron-vite': 'electron-vite',
+  'electron': 'electron',
   
   // 语言别名
   'ts': 'typescript',
@@ -212,6 +213,11 @@ function assignTechToStack(techStack: TechStack, tech: string): void {
   // 构建工具
   if (['vite', 'webpack', 'electron-vite', 'umi'].includes(tech)) {
     techStack.builder = tech as 'vite' | 'webpack' | 'electron-vite' | 'umi';
+  }
+  
+  // 特殊处理：electron 作为构建工具时映射到 electron-vite
+  if (tech === 'electron') {
+    techStack.builder = 'electron-vite';
   }
   
   // 语言

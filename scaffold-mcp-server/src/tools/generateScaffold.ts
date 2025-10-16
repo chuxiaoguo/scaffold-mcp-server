@@ -363,6 +363,7 @@ async function generateFromFixedTemplate(template: any, projectName: string, tec
       
     } catch (degitError: any) {
       console.error(`❌ Degit 拉取失败:`, degitError.message || degitError);
+      console.error(`❌ 详细错误信息:`, degitError);
       
       // 清理临时目录
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
@@ -409,16 +410,87 @@ async function countFiles(dirPath: string): Promise<number> {
  * 从本地模板生成项目（回退方案）
  */
 async function generateFromLocalTemplate(template: any, projectName: string, techStack: TechStack) {
-  // 直接从本地模板目录复制文件
-  const templatePath = path.resolve(__dirname, '../../..', 'scaffold-template', template.name);
+  console.log(`🔍 本地模板路径计算:`);
+  console.log(`   - __dirname: ${__dirname}`);
+  console.log(`   - 模板名称: ${template.name}`);
+  console.log(`   - process.cwd(): ${process.cwd()}`);
+  
+  // 多种路径查找策略
+  const possiblePaths = [
+    // 1. 相对于当前脚本的路径（开发环境）
+    path.resolve(__dirname, '../../..', 'scaffold-template', template.name),
+    // 2. 相对于当前工作目录的路径
+    path.resolve(process.cwd(), 'scaffold-template', template.name),
+    // 3. 相对于 package.json 所在目录的路径
+    path.resolve(process.cwd(), '..', 'scaffold-template', template.name),
+    // 4. npm 全局安装时的路径
+    path.resolve(__dirname, '../../../..', 'scaffold-template', template.name),
+    // 5. 检查是否在 node_modules 中
+    path.resolve(__dirname, '../../../../scaffold-template', template.name)
+  ];
+  
+  console.log(`   - 尝试的路径列表:`);
+  possiblePaths.forEach((p, i) => {
+    console.log(`     ${i + 1}. ${p}`);
+  });
+  
+  let templatePath: string | null = null;
+  let templateContents: string[] = [];
+  
+  // 依次尝试每个可能的路径
+  for (const possiblePath of possiblePaths) {
+    try {
+      console.log(`📁 检查模板目录: ${possiblePath}`);
+      await fs.access(possiblePath);
+      
+      // 验证这是一个有效的模板目录（包含必要文件）
+      const contents = await fs.readdir(possiblePath);
+      if (contents.length > 0) {
+        templatePath = possiblePath;
+        templateContents = contents;
+        console.log(`✅ 找到有效模板目录: ${templatePath}`);
+        console.log(`📋 模板目录内容: ${templateContents.join(', ')}`);
+        break;
+      }
+    } catch (error) {
+      console.log(`   ❌ 路径不存在或无法访问: ${possiblePath}`);
+    }
+  }
+  
+  if (!templatePath) {
+    console.error(`❌ 所有路径都无法找到模板 ${template.name}`);
+    console.log(`🔄 回退到基础模板生成`);
+    
+    // 回退到基础模板
+    return {
+      files: {
+        'src/main.ts': `// ${template.name} 项目入口文件\nconsole.log('Hello ${projectName}!');`,
+        'README.md': `# ${projectName}\n\n基于 ${template.name} 模板创建的项目。`,
+        '.gitignore': 'node_modules/\ndist/\n.env.local'
+      },
+      packageJson: {
+        name: projectName,
+        version: '1.0.0',
+        description: `${template.name} 项目`,
+        scripts: {
+          dev: 'vite',
+          build: 'vite build',
+          preview: 'vite preview'
+        },
+        dependencies: {},
+        devDependencies: {
+          'vite': '^5.0.0',
+          'typescript': '^5.0.0'
+        }
+      }
+    };
+  }
   
   try {
-    // 检查模板目录是否存在
-    await fs.access(templatePath);
-    
     // 直接读取模板目录中的所有文件
     const files: Record<string, string> = {};
     await readDirectoryRecursive(templatePath, files, templatePath);
+    console.log(`📖 成功读取 ${Object.keys(files).length} 个文件`);
     
     // 读取 package.json
     let packageJson: any = {};
@@ -429,14 +501,27 @@ async function generateFromLocalTemplate(template: any, projectName: string, tec
       
       // 更新项目名称
       packageJson.name = projectName;
+      console.log(`📦 成功读取并更新 package.json`);
     } catch (error) {
-      console.warn('未找到 package.json 文件');
+      console.warn('⚠️  未找到 package.json 文件，将使用默认配置');
+      packageJson = {
+        name: projectName,
+        version: '1.0.0',
+        description: `${template.name} 项目`,
+        scripts: {
+          dev: 'npm run start',
+          build: 'npm run build:prod',
+          start: 'npm run dev'
+        },
+        dependencies: {},
+        devDependencies: {}
+      };
     }
     
     return { files, packageJson };
     
   } catch (error) {
-    console.error(`本地模板 ${template.name} 不存在或无法访问:`, error);
+    console.error(`❌ 读取模板文件失败:`, error);
     
     // 回退到基础模板
     return {
@@ -500,19 +585,60 @@ async function readDirectoryRecursive(dir: string, files: Record<string, string>
  * 创建项目文件
  */
 async function createProjectFiles(targetPath: string, files: Record<string, string>): Promise<void> {
+  console.log(`📁 创建项目文件到: ${targetPath}`);
+  
   // 确保目标目录存在
-  await fs.mkdir(targetPath, { recursive: true });
+  try {
+    await fs.mkdir(targetPath, { recursive: true });
+    console.log(`✅ 项目目录创建成功: ${targetPath}`);
+  } catch (error) {
+    console.error(`❌ 创建项目目录失败: ${targetPath}`, error);
+    
+    // 尝试使用用户有权限的目录
+    const fallbackPaths = [
+      path.resolve(process.cwd(), path.basename(targetPath)),
+      path.resolve(require('os').homedir(), 'Desktop', path.basename(targetPath)),
+      path.resolve(require('os').tmpdir(), path.basename(targetPath))
+    ];
+    
+    console.log(`🔄 尝试备用路径:`);
+    let successPath: string | null = null;
+    
+    for (const fallbackPath of fallbackPaths) {
+      try {
+        console.log(`   - 尝试: ${fallbackPath}`);
+        await fs.mkdir(fallbackPath, { recursive: true });
+        successPath = fallbackPath;
+        console.log(`✅ 备用路径创建成功: ${fallbackPath}`);
+        break;
+      } catch (fallbackError) {
+        console.log(`   ❌ 备用路径失败: ${fallbackPath}`);
+      }
+    }
+    
+    if (!successPath) {
+      throw new Error(`无法创建项目目录，所有路径都失败了`);
+    }
+    
+    targetPath = successPath;
+  }
 
   // 创建所有文件
   for (const [filePath, content] of Object.entries(files)) {
-    const fullPath = path.join(targetPath, filePath);
-    const dir = path.dirname(fullPath);
-    
-    // 确保目录存在
-    await fs.mkdir(dir, { recursive: true });
-    
-    // 写入文件
-    await fs.writeFile(fullPath, content, 'utf-8');
+    try {
+      const fullPath = path.join(targetPath, filePath);
+      const dir = path.dirname(fullPath);
+      
+      // 确保目录存在
+      await fs.mkdir(dir, { recursive: true });
+      
+      // 写入文件
+      await fs.writeFile(fullPath, content, 'utf-8');
+      console.log(`✅ 创建文件: ${filePath}`);
+    } catch (error) {
+      console.error(`❌ 创建文件失败 ${filePath}:`, error);
+      throw error;
+    }
   }
 }
 
