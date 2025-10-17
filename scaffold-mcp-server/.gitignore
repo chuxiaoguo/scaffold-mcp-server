@@ -89,4 +89,4 @@ public
 .storybook-out
 
 # Temporary test directories
-test-templates/test-*/
+test-templates/test-*/.temp-template/

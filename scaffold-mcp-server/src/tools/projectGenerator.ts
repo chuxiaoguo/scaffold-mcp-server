@@ -1,5 +1,5 @@
 import * as path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 import type { TechStack } from "../types/index.js";
 import {
   parseTechStack,
@@ -21,7 +21,7 @@ import {
 // 固定模板配置
 const FIXED_TEMPLATES = [
   {
-    name: "vue3-vite",
+    name: "vue3-vite-typescript",
     framework: "vue3",
     builder: "vite",
     language: "typescript",
@@ -53,12 +53,15 @@ const FIXED_TEMPLATES = [
 /**
  * 匹配固定模板
  */
-export function matchFixedTemplate(techStack: TechStack, logs: string[] = []): any | null {
+export function matchFixedTemplate(
+  techStack: TechStack,
+  logs: string[] = []
+): any | null {
   logs.push(`🔍 匹配固定模板...`);
   logs.push(`   - 框架: ${techStack.framework}`);
   logs.push(`   - 构建工具: ${techStack.builder}`);
   logs.push(`   - 语言: ${techStack.language}`);
-  
+
   console.log(`🔍 匹配固定模板...`);
   console.log(`   - 框架: ${techStack.framework}`);
   console.log(`   - 构建工具: ${techStack.builder}`);
@@ -87,11 +90,11 @@ export function matchFixedTemplate(techStack: TechStack, logs: string[] = []): a
 /**
  * 根据固定模板填充默认值
  */
-function fillDefaultValues(techStack: TechStack, logs: string[] = []): TechStack {
-  logs.push(`🔧 填充默认值...`);
+function fillDefaultValues(
+  techStack: TechStack,
+  logs: string[] = []
+): TechStack {
   logs.push(`   - 原始技术栈: ${JSON.stringify(techStack)}`);
-  
-  console.log(`🔧 填充默认值...`);
   console.log(`   - 原始技术栈: ${JSON.stringify(techStack)}`);
 
   // 如果已经有完整的配置，直接返回
@@ -110,8 +113,10 @@ function fillDefaultValues(techStack: TechStack, logs: string[] = []): TechStack
       techStack.language === "typescript" ||
       techStack.language === "javascript"
     ) {
-      defaultTemplate = FIXED_TEMPLATES.find((t) => t.name === "vue3-vite");
-      logs.push(`📦 选择默认模板: vue3-vite`);
+      defaultTemplate = FIXED_TEMPLATES.find(
+        (t) => t.name === "vue3-vite-typescript"
+      );
+      logs.push(`📦 选择默认模板: vue3-vite-typescript`);
     }
   }
 
@@ -119,13 +124,15 @@ function fillDefaultValues(techStack: TechStack, logs: string[] = []): TechStack
   if (techStack.builder && !techStack.framework && !techStack.language) {
     logs.push(`🔍 仅指定构建工具 ${techStack.builder}，查找默认模板...`);
     if (techStack.builder === "vite") {
-      defaultTemplate = FIXED_TEMPLATES.find((t) => t.name === "vue3-vite");
-      logs.push(`📦 选择默认模板: vue3-vite`);
-    } else if (techStack.builder === "webpack") {
       defaultTemplate = FIXED_TEMPLATES.find(
-        (t) => t.name === "react-webpack-typescript"
+        (t) => t.name === "vue3-vite-typescript"
       );
-      logs.push(`📦 选择默认模板: react-webpack-typescript`);
+      logs.push(`📦 选择默认模板: vue3-vite-typescript`);
+    } else if (techStack.builder === "webpack") {
+      // 修复：webpack 不应该默认选择 react 模板，应该让用户明确指定框架
+      // 或者使用动态模板生成
+      logs.push(`⚠️ 仅指定 webpack 构建工具，无法确定框架，建议使用动态模板`);
+      // 不设置 defaultTemplate，让系统使用动态模板
     } else if (techStack.builder === "umi") {
       defaultTemplate = FIXED_TEMPLATES.find((t) => t.name === "umijs");
       logs.push(`📦 选择默认模板: umijs`);
@@ -141,13 +148,19 @@ function fillDefaultValues(techStack: TechStack, logs: string[] = []): TechStack
   if (techStack.framework && !techStack.builder && !techStack.language) {
     logs.push(`🔍 仅指定框架 ${techStack.framework}，查找默认模板...`);
     if (techStack.framework === "vue3") {
-      defaultTemplate = FIXED_TEMPLATES.find((t) => t.name === "vue3-vite");
-      logs.push(`📦 选择默认模板: vue3-vite`);
+      defaultTemplate = FIXED_TEMPLATES.find(
+        (t) => t.name === "vue3-vite-typescript"
+      );
+      logs.push(`📦 选择默认模板: vue3-vite-typescript`);
     } else if (techStack.framework === "react") {
       defaultTemplate = FIXED_TEMPLATES.find(
         (t) => t.name === "react-webpack-typescript"
       );
       logs.push(`📦 选择默认模板: react-webpack-typescript`);
+    } else if (techStack.framework === "vue2") {
+      // Vue2 不在固定模板中，使用动态模板
+      logs.push(`⚠️ Vue2 不在固定模板中，建议使用动态模板`);
+      // 不设置 defaultTemplate，让系统使用动态模板
     }
   }
 
@@ -185,8 +198,11 @@ function fillDefaultValues(techStack: TechStack, logs: string[] = []): TechStack
         t.builder === techStack.builder && t.language === techStack.language
     );
     if (matchingTemplate) {
-      defaultTemplate = matchingTemplate;
-      logs.push(`📦 找到匹配模板: ${matchingTemplate.name}`);
+      // 注意：不要自动设置框架，因为用户可能想要使用不同的框架
+      // 例如：vue2 + webpack + typescript 不应该被映射为 react + webpack + typescript
+      logs.push(`⚠️ 找到匹配模板 ${matchingTemplate.name}，但不自动设置框架，避免覆盖用户意图`);
+      // defaultTemplate = matchingTemplate;
+      // logs.push(`📦 找到匹配模板: ${matchingTemplate.name}`);
     }
   }
 
@@ -195,6 +211,7 @@ function fillDefaultValues(techStack: TechStack, logs: string[] = []): TechStack
     const filledTechStack: TechStack = {
       framework: (techStack.framework || defaultTemplate.framework) as
         | "vue3"
+        | "vue2"
         | "react",
       builder: (techStack.builder || defaultTemplate.builder) as
         | "vite"
@@ -805,7 +822,7 @@ export async function generateProject(
   processLogs?: string[];
 }> {
   const logs: string[] = [];
-  
+
   try {
     logs.push(`🚀 开始生成项目...`);
     logs.push(`   - 项目名称: ${projectName}`);
@@ -813,7 +830,7 @@ export async function generateProject(
     logs.push(`   - 技术栈: ${JSON.stringify(techStackInput)}`);
     logs.push(`   - 额外工具: ${extraTools.join(", ") || "无"}`);
     logs.push(`   - 选项: ${JSON.stringify(options)}`);
-    
+
     console.log(`🚀 开始生成项目...`);
     console.log(`   - 项目名称: ${projectName}`);
     console.log(`   - 输出目录: ${outputDir}`);
@@ -825,7 +842,7 @@ export async function generateProject(
     logs.push(`📋 解析技术栈...`);
     const techStack = parseTechStack(techStackInput);
     logs.push(`   - 解析结果: ${JSON.stringify(techStack)}`);
-    
+
     const normalizedTechStack = normalizeTechStack(techStack);
     logs.push(`   - 标准化结果: ${JSON.stringify(normalizedTechStack)}`);
 
@@ -835,15 +852,11 @@ export async function generateProject(
     logs.push(`📋 最终技术栈: ${JSON.stringify(filledTechStack)}`);
     console.log(`📋 最终技术栈:`, filledTechStack);
 
-    // 3. 确定项目路径
+    // 3. 确定项目路径（outputDir已经是绝对路径）
     logs.push(`📁 确定项目路径...`);
-    // 相对路径基于用户当前工作目录，绝对路径直接使用
-    const userWorkingDir = process.cwd();
-    const resolvedOutputDir = path.isAbsolute(outputDir) ? outputDir : path.resolve(userWorkingDir, outputDir);
+    const resolvedOutputDir = outputDir; // 已经通过pathResolver.ts解析为绝对路径
     const projectPath = path.resolve(resolvedOutputDir, projectName);
-    logs.push(`   - 用户工作目录: ${userWorkingDir}`);
-    logs.push(`   - 输出目录参数: ${outputDir}`);
-    logs.push(`   - 解析后输出目录: ${resolvedOutputDir}`);
+    logs.push(`   - 输出目录: ${resolvedOutputDir}`);
     logs.push(`   - 项目路径: ${projectPath}`);
     console.log(`📁 项目路径: ${projectPath}`);
 
@@ -894,7 +907,7 @@ export async function generateProject(
         normalizedTechStack,
         logs
       );
-      
+
       // 注意：不需要合并 processLogs，因为 generateFromFixedTemplate 已经直接向 logs 添加了日志
     } else {
       logs.push(`🔧 使用动态生成模板`);
@@ -904,7 +917,7 @@ export async function generateProject(
         projectName,
         logs
       );
-      
+
       // 注意：不需要合并 processLogs，因为 generateFromNonFixedTemplate 已经直接向 logs 添加了日志
     }
 
@@ -915,14 +928,16 @@ export async function generateProject(
     } else {
       logs.push(`   - 无额外工具需要注入`);
     }
-    
+
     const { files, packageJson } = injectExtraTools(
       templateResult.files,
       templateResult.packageJson,
       extraTools
     );
     logs.push(`   - 文件数量: ${Object.keys(files).length}`);
-    logs.push(`   - 依赖数量: ${Object.keys(packageJson.dependencies || {}).length + Object.keys(packageJson.devDependencies || {}).length}`);
+    logs.push(
+      `   - 依赖数量: ${Object.keys(packageJson.dependencies || {}).length + Object.keys(packageJson.devDependencies || {}).length}`
+    );
 
     // 8. 如果是预览模式，只返回信息
     if (options.dryRun) {
@@ -989,17 +1004,17 @@ ${dependencyList}`,
 
     // 13. 统计最终的实际文件数量（安装依赖后可能会有变化）
     logs.push(`📊 统计最终文件数量...`);
-    const fs = await import('fs/promises');
-    
+    const fs = await import("fs/promises");
+
     async function countFinalFiles(dirPath: string): Promise<number> {
       let count = 0;
       try {
         const entries = await fs.readdir(dirPath, { withFileTypes: true });
-        
+
         for (const entry of entries) {
           if (entry.isFile()) {
             count++;
-          } else if (entry.isDirectory() && entry.name !== 'node_modules') {
+          } else if (entry.isDirectory() && entry.name !== "node_modules") {
             const subDirPath = path.join(dirPath, entry.name);
             count += await countFinalFiles(subDirPath);
           }

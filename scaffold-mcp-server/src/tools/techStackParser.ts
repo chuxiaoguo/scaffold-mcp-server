@@ -102,13 +102,15 @@ export function parseTechStack(techStack: string | string[]): TechStack {
     });
   }
 
-  // 设置默认值
+  // 设置默认值 - 只在没有明确指定时才设置默认值
+  // 注意：不要覆盖用户明确指定的技术栈选择
   if (!result.language) {
     result.language = 'typescript';
   }
-  if (!result.builder) {
-    result.builder = 'vite';
-  }
+  // 移除默认构建工具设置，让用户明确指定或使用动态模板
+  // if (!result.builder) {
+  //   result.builder = 'vite';
+  // }
   if (!result.packageManager) {
     result.packageManager = 'npm';
   }

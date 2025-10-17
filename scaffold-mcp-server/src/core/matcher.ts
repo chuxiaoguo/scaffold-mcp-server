@@ -19,6 +19,8 @@ const TECH_ALIASES: Record<string, string> = {
   'vue': 'vue3',
   'vue.js': 'vue3',
   'vuejs': 'vue3',
+  // 保持 vue2 原样，不映射为 vue3
+  'vue2': 'vue2',
   'react.js': 'react',
   'reactjs': 'react',
   
@@ -46,7 +48,8 @@ const TECH_ALIASES: Record<string, string> = {
   
   // UI库别名
   'element': 'element-plus',
-  'element-ui': 'element-plus',
+  // 修正：element-ui 应该保持原样，不映射为 element-plus
+  'element-ui': 'element-ui',
   'el': 'element-plus',
   'antd': 'antd',
   'ant-design': 'antd',
@@ -206,8 +209,8 @@ function extractTechnologies(input: string): string[] {
  */
 function assignTechToStack(techStack: TechStack, tech: string): void {
   // 框架
-  if (['vue3', 'react'].includes(tech)) {
-    techStack.framework = tech as 'vue3' | 'react';
+  if (['vue3', 'vue2', 'react'].includes(tech)) {
+    techStack.framework = tech as 'vue3' | 'vue2' | 'react';
   }
   
   // 构建工具
@@ -236,8 +239,8 @@ function assignTechToStack(techStack: TechStack, tech: string): void {
   }
   
   // UI库
-  if (['element-plus', 'antd', 'antd-vue'].includes(tech)) {
-    techStack.ui = tech as 'element-plus' | 'antd' | 'antd-vue';
+  if (['element-plus', 'element-ui', 'antd', 'antd-vue'].includes(tech)) {
+    techStack.ui = tech as 'element-plus' | 'element-ui' | 'antd' | 'antd-vue';
   }
   
   // 样式

@@ -1,12 +1,12 @@
 // 脚手架生成相关类型定义
 
 export interface TechStack {
-  framework?: 'vue3' | 'react';
+  framework?: 'vue3' | 'vue2' | 'react';
   builder?: 'vite' | 'webpack' | 'electron-vite' | 'umi';
   language?: 'typescript' | 'javascript';
   router?: 'vue-router' | 'react-router' | 'umi-router';
   state?: 'pinia' | 'vuex' | 'redux' | 'zustand' | 'dva';
-  ui?: 'element-plus' | 'antd' | 'antd-vue';
+  ui?: 'element-plus' | 'element-ui' | 'antd' | 'antd-vue';
   style?: 'css' | 'less' | 'sass' | 'tailwindcss';
   packageManager?: 'pnpm' | 'npm' | 'yarn';
 }

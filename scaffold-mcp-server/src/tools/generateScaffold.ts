@@ -7,6 +7,11 @@ import { smartMatchFixedTemplate } from "../core/matcher.js";
 import { NonFixedBuilder } from "../core/nonFixedBuilder/index.js";
 import { ToolInjectorManager } from "../core/injectors/index.js";
 import { generateProject } from "./projectGenerator.js";
+import { 
+  resolveProjectPathAndName, 
+  validateProjectPath, 
+  getPathResolutionInfo 
+} from "./pathResolver.js";
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -51,16 +56,58 @@ export async function generateScaffold(
 
   try {
     processLogs.push(`🚀 开始生成脚手架项目...`);
-    processLogs.push(`📋 参数: ${JSON.stringify(params, null, 2)}`);
+    processLogs.push(`📋 原始参数: ${JSON.stringify(params, null, 2)}`);
     console.log(`🚀 开始生成脚手架项目...`);
-    console.log(`📋 参数:`, JSON.stringify(params, null, 2));
+    console.log(`📋 原始参数:`, JSON.stringify(params, null, 2));
 
-    // 使用重构后的项目生成器
+    // 1. 智能路径解析
+    processLogs.push(`📁 开始智能路径解析...`);
+    const pathInfo = getPathResolutionInfo(params);
+    processLogs.push(`📁 路径解析详情:`);
+    processLogs.push(`   - 工作空间根目录: ${pathInfo.workspaceRoot}`);
+    processLogs.push(`   - 用户指定输出目录: ${pathInfo.userOutputDir || '未指定'}`);
+    processLogs.push(`   - 用户指定项目名称: ${pathInfo.userProjectName || '未指定'}`);
+    processLogs.push(`   - 解析后基础路径: ${pathInfo.resolvedBasePath}`);
+    processLogs.push(`   - 解析后项目路径: ${pathInfo.resolvedProjectPath}`);
+    processLogs.push(`   - 解析后项目名称: ${pathInfo.resolvedProjectName}`);
+    processLogs.push(`   - 是否绝对路径: ${pathInfo.isAbsolutePath}`);
+    processLogs.push(`   - 是否有效工作空间: ${pathInfo.isValidWorkspace}`);
+
+    const { projectPath, projectName } = resolveProjectPathAndName(params);
+    
+    // 2. 路径验证
+    processLogs.push(`🔍 验证项目路径...`);
+    const validation = validateProjectPath(projectPath, params.options?.force || false);
+    if (!validation.valid) {
+      processLogs.push(`❌ 路径验证失败: ${validation.message}`);
+      if (validation.suggestions) {
+        processLogs.push(`💡 建议:`);
+        validation.suggestions.forEach(suggestion => {
+          processLogs.push(`   - ${suggestion}`);
+        });
+      }
+      
+      return {
+        projectName,
+        targetPath: projectPath,
+        tree: { name: "validation-failed", type: "directory", path: projectPath },
+        files: [],
+        templateSource: `路径验证失败: ${validation.message}`,
+        processLogs,
+      };
+    }
+    processLogs.push(`✅ 路径验证通过`);
+
+    // 3. 使用重构后的项目生成器
     processLogs.push(`🔧 调用项目生成器...`);
+    
+    // 计算相对于项目路径的输出目录
+    const outputDir = path.dirname(projectPath);
+    
     const result = await generateProject(
       params.tech_stack,
-      params.project_name || "my-project",
-      params.output_dir || ".",
+      projectName,
+      outputDir,
       params.extra_tools || [],
       {
         dryRun: params.options?.dryRun || false,
@@ -82,9 +129,9 @@ export async function generateScaffold(
     if (!result.success) {
       processLogs.push(`❌ 项目生成失败，返回失败结果`);
       return {
-        projectName: params.project_name || "my-project",
-        targetPath: params.output_dir || ".",
-        tree: { name: "empty", type: "directory", path: "." },
+        projectName,
+        targetPath: projectPath,
+        tree: { name: "failed", type: "directory", path: projectPath },
         files: [],
         templateSource: "failed",
         processLogs,
@@ -92,32 +139,32 @@ export async function generateScaffold(
     }
 
     processLogs.push(`🏗️ 构建返回结果...`);
-    processLogs.push(`📁 项目路径: ${result.projectPath}`);
+    processLogs.push(`📁 最终项目路径: ${projectPath}`);
     
     // 统计实际生成的文件数量
-    const actualFileCount = result.projectPath ? await countAllFiles(result.projectPath) : 0;
-    processLogs.push(`📄 文件数量: ${actualFileCount}`);
+    const actualFileCount = await countAllFiles(projectPath);
+    processLogs.push(`📄 实际生成文件数量: ${actualFileCount}`);
 
     // 构建返回结果
     const generateResult: GenerateResult = {
-      projectName: params.project_name || "my-project",
-      targetPath: result.projectPath || ".",
+      projectName,
+      targetPath: projectPath,
       tree:
         typeof result.directoryTree === "string"
           ? {
-              name: params.project_name || "my-project",
+              name: projectName,
               type: "directory",
-              path: result.projectPath || ".",
+              path: projectPath,
             }
           : result.directoryTree || {
               name: "empty",
               type: "directory",
-              path: ".",
+              path: projectPath,
             },
       files: Array.isArray(result.fileSummary)
         ? result.fileSummary.map((f) => ({ path: f, size: 0, type: "file" }))
         : [],
-      templateSource: "refactored-generator",
+      templateSource: "智能路径解析生成器",
       processLogs,
     };
 
@@ -129,10 +176,24 @@ export async function generateScaffold(
     processLogs.push(`🔍 错误堆栈: ${error.stack || "No stack trace"}`);
     console.error(`❌ 生成脚手架项目失败:`, error);
 
+    // 尝试获取项目信息用于错误返回
+    let errorProjectName = "my-project";
+    let errorTargetPath = ".";
+    
+    try {
+      const { projectPath, projectName } = resolveProjectPathAndName(params);
+      errorProjectName = projectName;
+      errorTargetPath = projectPath;
+    } catch {
+      // 如果路径解析也失败，使用默认值
+      errorProjectName = params.project_name || "my-project";
+      errorTargetPath = params.output_dir || ".";
+    }
+
     return {
-      projectName: params.project_name || "my-project",
-      targetPath: params.output_dir || ".",
-      tree: { name: "error", type: "directory", path: "." },
+      projectName: errorProjectName,
+      targetPath: errorTargetPath,
+      tree: { name: "error", type: "directory", path: errorTargetPath },
       files: [],
       templateSource: `生成失败: ${error.message || error}`,
       processLogs,
