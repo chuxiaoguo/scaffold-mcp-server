@@ -1,4 +1,5 @@
 import * as path from "path";
+import { fileURLToPath } from 'url';
 import type { TechStack } from "../types/index.js";
 import {
   parseTechStack,
@@ -836,29 +837,50 @@ export async function generateProject(
 
     // 3. 确定项目路径
     logs.push(`📁 确定项目路径...`);
-    const projectPath = path.resolve(outputDir, projectName);
+    // 相对路径基于用户当前工作目录，绝对路径直接使用
+    const userWorkingDir = process.cwd();
+    const resolvedOutputDir = path.isAbsolute(outputDir) ? outputDir : path.resolve(userWorkingDir, outputDir);
+    const projectPath = path.resolve(resolvedOutputDir, projectName);
+    logs.push(`   - 用户工作目录: ${userWorkingDir}`);
+    logs.push(`   - 输出目录参数: ${outputDir}`);
+    logs.push(`   - 解析后输出目录: ${resolvedOutputDir}`);
     logs.push(`   - 项目路径: ${projectPath}`);
     console.log(`📁 项目路径: ${projectPath}`);
 
-    // 4. 检查目录是否存在
-    logs.push(`🔍 检查目录是否存在...`);
+    // 4. 确保输出目录存在
+    logs.push(`📁 确保输出目录存在...`);
+    try {
+      const fs = await import("fs/promises");
+      await fs.mkdir(resolvedOutputDir, { recursive: true });
+      logs.push(`✅ 输出目录已确保存在: ${resolvedOutputDir}`);
+    } catch (error: any) {
+      logs.push(`❌ 创建输出目录失败: ${error.message || error}`);
+      return {
+        success: false,
+        message: `无法创建输出目录 ${resolvedOutputDir}: ${error.message || error}。请检查路径权限。`,
+        processLogs: logs,
+      };
+    }
+
+    // 5. 检查项目目录是否存在
+    logs.push(`🔍 检查项目目录是否存在...`);
     if (!options.force) {
       try {
         await import("fs/promises").then((fs) => fs.access(projectPath));
-        logs.push(`❌ 目录已存在，需要使用 --force 选项`);
+        logs.push(`❌ 项目目录已存在，需要使用 --force 选项`);
         return {
           success: false,
-          message: `目录 ${projectPath} 已存在。使用 --force 选项强制覆盖。`,
+          message: `项目目录 ${projectPath} 已存在。使用 --force 选项强制覆盖。`,
           processLogs: logs,
         };
       } catch {
-        logs.push(`✅ 目录不存在，可以继续创建`);
+        logs.push(`✅ 项目目录不存在，可以继续创建`);
       }
     } else {
-      logs.push(`⚠️ 使用强制模式，将覆盖现有目录`);
+      logs.push(`⚠️ 使用强制模式，将覆盖现有项目目录`);
     }
 
-    // 5. 匹配模板并生成项目
+    // 6. 匹配模板并生成项目
     logs.push(`🔍 匹配模板...`);
     let templateResult: TemplateResult;
     const fixedTemplate = matchFixedTemplate(filledTechStack, logs);
@@ -872,6 +894,8 @@ export async function generateProject(
         normalizedTechStack,
         logs
       );
+      
+      // 注意：不需要合并 processLogs，因为 generateFromFixedTemplate 已经直接向 logs 添加了日志
     } else {
       logs.push(`🔧 使用动态生成模板`);
       console.log(`🔧 使用动态生成模板`);
@@ -880,9 +904,11 @@ export async function generateProject(
         projectName,
         logs
       );
+      
+      // 注意：不需要合并 processLogs，因为 generateFromNonFixedTemplate 已经直接向 logs 添加了日志
     }
 
-    // 6. 注入额外工具
+    // 7. 注入额外工具
     logs.push(`🔧 注入额外工具...`);
     if (extraTools.length > 0) {
       logs.push(`   - 额外工具: ${extraTools.join(", ")}`);
@@ -898,7 +924,7 @@ export async function generateProject(
     logs.push(`   - 文件数量: ${Object.keys(files).length}`);
     logs.push(`   - 依赖数量: ${Object.keys(packageJson.dependencies || {}).length + Object.keys(packageJson.devDependencies || {}).length}`);
 
-    // 7. 如果是预览模式，只返回信息
+    // 8. 如果是预览模式，只返回信息
     if (options.dryRun) {
       logs.push(`👀 预览模式，不创建实际文件`);
       console.log(`👀 预览模式，不创建实际文件`);
@@ -929,11 +955,11 @@ ${dependencyList}`,
       };
     }
 
-    // 8. 创建项目文件
+    // 9. 创建项目文件
     logs.push(`📁 创建项目文件...`);
     await createProjectFiles(projectPath, files, projectName, logs);
 
-    // 9. 创建 package.json
+    // 10. 创建 package.json
     logs.push(`📦 创建 package.json...`);
     const packageJsonPath = path.join(projectPath, "package.json");
     await import("fs/promises").then((fs) =>
@@ -946,7 +972,7 @@ ${dependencyList}`,
     logs.push(`✅ package.json 创建成功`);
     console.log(`✅ 创建 package.json`);
 
-    // 10. 安装依赖
+    // 11. 安装依赖
     if (options.install !== false) {
       logs.push(`📦 安装依赖...`);
       await installDependencies(projectPath, options.install, logs);
@@ -954,12 +980,38 @@ ${dependencyList}`,
       logs.push(`⏭️ 跳过依赖安装`);
     }
 
-    // 11. 生成项目摘要
+    // 12. 生成项目摘要
     logs.push(`📊 生成项目摘要...`);
     const directoryTree = await generateDirectoryTree(projectPath);
     const fileSummary = await generateFileSummary(projectPath);
     logs.push(`   - 目录树生成完成`);
     logs.push(`   - 文件摘要生成完成`);
+
+    // 13. 统计最终的实际文件数量（安装依赖后可能会有变化）
+    logs.push(`📊 统计最终文件数量...`);
+    const fs = await import('fs/promises');
+    
+    async function countFinalFiles(dirPath: string): Promise<number> {
+      let count = 0;
+      try {
+        const entries = await fs.readdir(dirPath, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          if (entry.isFile()) {
+            count++;
+          } else if (entry.isDirectory() && entry.name !== 'node_modules') {
+            const subDirPath = path.join(dirPath, entry.name);
+            count += await countFinalFiles(subDirPath);
+          }
+        }
+      } catch (error) {
+        // 忽略无法访问的目录
+      }
+      return count;
+    }
+
+    const finalFileCount = await countFinalFiles(projectPath);
+    logs.push(`   - 最终文件数量: ${finalFileCount}`);
 
     logs.push(`🎉 项目生成完成！`);
     console.log(`🎉 项目生成完成！`);
@@ -970,7 +1022,7 @@ ${dependencyList}`,
 
 📁 项目路径: ${projectPath}
 🛠️  技术栈: ${techStackToArray(normalizedTechStack).join(" + ")}
-📦 文件数量: ${Object.keys(files).length}
+📦 文件数量: ${finalFileCount}
 
 下一步:
   cd ${projectName}

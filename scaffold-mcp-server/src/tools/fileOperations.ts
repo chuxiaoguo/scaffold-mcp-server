@@ -18,9 +18,24 @@ export async function createProjectFiles(
   try {
     await fs.mkdir(outputDir, { recursive: true });
     logs.push(`📁 成功创建输出目录: ${outputDir}`);
-  } catch (error) {
-    logs.push(`❌ 创建输出目录失败: ${error}`);
-    throw error;
+  } catch (error: any) {
+    const errorMessage = error.message || error.toString();
+    logs.push(`❌ 创建输出目录失败: ${errorMessage}`);
+    
+    // 提供更详细的错误信息和建议
+    if (error.code === 'EACCES') {
+      logs.push(`💡 建议: 权限不足，请检查目录权限或使用管理员权限运行`);
+      throw new Error(`权限不足，无法创建目录 ${outputDir}。请检查目录权限或使用管理员权限运行。`);
+    } else if (error.code === 'ENOTDIR') {
+      logs.push(`💡 建议: 路径中存在同名文件，请检查路径是否正确`);
+      throw new Error(`路径冲突，${outputDir} 路径中存在同名文件。请检查路径是否正确。`);
+    } else if (error.code === 'ENOSPC') {
+      logs.push(`💡 建议: 磁盘空间不足，请清理磁盘空间后重试`);
+      throw new Error(`磁盘空间不足，无法创建目录 ${outputDir}。请清理磁盘空间后重试。`);
+    } else {
+      logs.push(`💡 建议: 请检查路径是否有效，以及是否有足够的权限`);
+      throw new Error(`创建目录失败: ${errorMessage}。请检查路径是否有效，以及是否有足够的权限。`);
+    }
   }
   
   let successCount = 0;
@@ -37,8 +52,18 @@ export async function createProjectFiles(
     try {
       await fs.mkdir(dir, { recursive: true });
       logs.push(`📁 确保目录存在: ${path.relative(outputDir, dir)}`);
-    } catch (error) {
-      logs.push(`❌ 创建目录失败 ${path.relative(outputDir, dir)}: ${error}`);
+    } catch (error: any) {
+      const errorMessage = error.message || error.toString();
+      logs.push(`❌ 创建目录失败 ${path.relative(outputDir, dir)}: ${errorMessage}`);
+      
+      // 对于子目录创建失败，记录错误但不中断整个过程
+      if (error.code === 'EACCES') {
+        logs.push(`💡 权限不足，跳过该文件的目录创建`);
+      } else if (error.code === 'ENOTDIR') {
+        logs.push(`💡 路径冲突，跳过该文件的目录创建`);
+      } else {
+        logs.push(`💡 目录创建失败，将尝试直接创建文件`);
+      }
     }
     
     try {

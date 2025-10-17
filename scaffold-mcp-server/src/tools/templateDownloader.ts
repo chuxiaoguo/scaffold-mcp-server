@@ -36,6 +36,18 @@ async function downloadWithSparseCheckout(
     console.log(`🌿 分支: ${branch}`);
     console.log(`📁 路径: ${templatePath}`);
     
+    // 设置30秒超时
+    const TIMEOUT_MS = 30000;
+    let timeoutId: NodeJS.Timeout;
+    let isCompleted = false;
+    
+    const cleanup = () => {
+      isCompleted = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+    
     // Step 1: Clone with sparse-checkout
     const cloneProcess = spawn('git', [
       'clone',
@@ -48,6 +60,22 @@ async function downloadWithSparseCheckout(
       cwd: tempDir,
       stdio: ['pipe', 'pipe', 'pipe']
     });
+    
+    // 设置超时处理
+    timeoutId = setTimeout(() => {
+      if (!isCompleted) {
+        logs.push(`⏰ Git clone 操作超时 (${TIMEOUT_MS/1000}秒)，正在终止进程...`);
+        console.log(`⏰ Git clone 操作超时 (${TIMEOUT_MS/1000}秒)，正在终止进程...`);
+        cloneProcess.kill('SIGTERM');
+        setTimeout(() => {
+          if (!cloneProcess.killed) {
+            cloneProcess.kill('SIGKILL');
+          }
+        }, 5000);
+        cleanup();
+        reject(new Error(`Git clone operation timed out after ${TIMEOUT_MS/1000} seconds`));
+      }
+    }, TIMEOUT_MS);
     
     let cloneOutput = '';
     let cloneError = '';
@@ -65,9 +93,12 @@ async function downloadWithSparseCheckout(
     });
     
     cloneProcess.on('close', (code) => {
+      if (isCompleted) return; // 如果已经超时，忽略后续处理
+      
       logs.push(`Git Clone 进程退出，退出码: ${code}`);
       
       if (code !== 0) {
+        cleanup();
         logs.push(`❌ Git clone 失败: ${cloneError}`);
         reject(new Error(`Git clone failed: ${cloneError}`));
         return;
@@ -86,6 +117,22 @@ async function downloadWithSparseCheckout(
         stdio: ['pipe', 'pipe', 'pipe']
       });
       
+      // 为sparse-checkout设置超时
+      const sparseTimeoutId = setTimeout(() => {
+        if (!isCompleted) {
+          logs.push(`⏰ Git sparse-checkout 操作超时 (${TIMEOUT_MS/1000}秒)，正在终止进程...`);
+          console.log(`⏰ Git sparse-checkout 操作超时 (${TIMEOUT_MS/1000}秒)，正在终止进程...`);
+          sparseProcess.kill('SIGTERM');
+          setTimeout(() => {
+            if (!sparseProcess.killed) {
+              sparseProcess.kill('SIGKILL');
+            }
+          }, 5000);
+          cleanup();
+          reject(new Error(`Git sparse-checkout operation timed out after ${TIMEOUT_MS/1000} seconds`));
+        }
+      }, TIMEOUT_MS);
+      
       let sparseOutput = '';
       let sparseError = '';
       
@@ -102,14 +149,19 @@ async function downloadWithSparseCheckout(
       });
       
       sparseProcess.on('close', (sparseCode) => {
+        if (isCompleted) return; // 如果已经超时，忽略后续处理
+        
+        clearTimeout(sparseTimeoutId); // 清除sparse-checkout超时
         logs.push(`Git Sparse-checkout 进程退出，退出码: ${sparseCode}`);
         
         if (sparseCode !== 0) {
+          cleanup();
           logs.push(`❌ Git sparse-checkout 失败: ${sparseError}`);
           reject(new Error(`Git sparse-checkout failed: ${sparseError}`));
           return;
         }
         
+        cleanup();
         logs.push(`✅ Sparse-checkout 配置完成`);
         console.log(`✅ Sparse-checkout 配置完成`);
         resolve();
@@ -192,8 +244,9 @@ export async function generateFromFixedTemplate(
   logs.push(`🚀 开始从GitHub拉取模板: ${template.name}`);
   logs.push(`📦 仓库地址: https://github.com/${GITHUB_REPO}/tree/${GITHUB_BRANCH}/${TEMPLATE_PATH}`);
   
-  // 创建临时目录
-  const tempDir = path.join(process.cwd(), '.temp-template', `${template.name}-${Date.now()}`);
+  // 创建临时目录 - 使用项目根目录而不是 process.cwd()
+  const projectRoot = path.resolve(__dirname, '../../..');
+  const tempDir = path.join(projectRoot, '.temp-template', `${template.name}-${Date.now()}`);
   logs.push(`📁 创建临时目录: ${tempDir}`);
   console.log(`📁 创建临时目录: ${tempDir}`);
   await fs.mkdir(tempDir, { recursive: true });
@@ -298,8 +351,18 @@ export async function generateFromFixedTemplate(
         console.log(`⬇️  开始 degit 下载模板文件...`);
         const degitStartTime = Date.now();
         
-        // 拉取模板到临时目录
-        await emitter.clone(tempDir);
+        // 为degit操作添加超时处理
+        const DEGIT_TIMEOUT_MS = 30000; // 30秒超时
+        const degitPromise = emitter.clone(tempDir);
+        
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Degit operation timed out after ${DEGIT_TIMEOUT_MS/1000} seconds`));
+          }, DEGIT_TIMEOUT_MS);
+        });
+        
+        // 使用Promise.race来实现超时
+        await Promise.race([degitPromise, timeoutPromise]);
         
         const degitEndTime = Date.now();
         const degitDuration = degitEndTime - degitStartTime;
@@ -387,21 +450,23 @@ export async function generateFromLocalTemplate(
   logs.push(`🔍 开始本地模板路径计算:`);
   logs.push(`   - __dirname: ${__dirname}`);
   logs.push(`   - 模板名称: ${template.name}`);
-  logs.push(`   - process.cwd(): ${process.cwd()}`);
+  
+  const projectRoot = path.resolve(__dirname, '../../..');
+  logs.push(`   - 项目根目录: ${projectRoot}`);
   
   console.log(`🔍 本地模板路径计算:`);
   console.log(`   - __dirname: ${__dirname}`);
   console.log(`   - 模板名称: ${template.name}`);
-  console.log(`   - process.cwd(): ${process.cwd()}`);
+  console.log(`   - 项目根目录: ${projectRoot}`);
   
   // 多种路径查找策略
   const possiblePaths = [
     // 1. 相对于当前脚本的路径（开发环境）
     path.resolve(__dirname, '../../..', 'scaffold-template', template.name),
-    // 2. 相对于当前工作目录的路径
-    path.resolve(process.cwd(), 'scaffold-template', template.name),
-    // 3. 相对于 package.json 所在目录的路径
-    path.resolve(process.cwd(), '..', 'scaffold-template', template.name),
+    // 2. 相对于项目根目录的路径
+    path.resolve(projectRoot, 'scaffold-template', template.name),
+    // 3. 相对于项目根目录上级的路径
+    path.resolve(projectRoot, '..', 'scaffold-template', template.name),
     // 4. npm 全局安装时的路径
     path.resolve(__dirname, '../../../..', 'scaffold-template', template.name),
     // 5. 检查是否在 node_modules 中
