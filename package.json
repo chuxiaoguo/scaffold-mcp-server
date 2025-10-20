@@ -3,6 +3,9 @@
   "version": "1.1.1",
   "description": "MCP server for generating frontend scaffolds",
   "main": "dist/index.js",
+  "bin": {
+    "scaffold-mcp-server": "dist/index.js"
+  },
   "type": "module",
   "author": "chuxiaoguo <chuxiaoguo@example.com>",
   "license": "MIT",
