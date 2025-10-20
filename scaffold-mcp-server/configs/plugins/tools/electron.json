@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "name": "electron",
+    "version": "1.0.0",
+    "category": "tools",
+    "description": "Electron desktop application configuration",
+    "author": "Scaffold MCP Server",
+    "homepage": "https://www.electronjs.org/",
+    "keywords": ["electron", "desktop", "cross-platform", "native-app"]
+  },
+  "activation": {
+    "framework": ["electron"],
+    "techStack": {
+      "framework": ["electron"]
+    }
+  },
+  "dependencies": [
+    {
+      "name": "electron",
+      "version": "^27.1.3",
+      "type": "devDependencies"
+    },
+    {
+      "name": "electron-builder",
+      "version": "^24.6.4",
+      "type": "devDependencies"
+    },
+    {
+      "name": "concurrently",
+      "version": "^8.2.2",
+      "type": "devDependencies"
+    },
+    {
+      "name": "wait-on",
+      "version": "^7.2.0",
+      "type": "devDependencies"
+    }
+  ],
+  "scripts": {
+    "electron": "electron .",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:pack": "electron-builder",
+    "electron:dist": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:mac": "npm run build && electron-builder --mac",
+    "electron:build:linux": "npm run build && electron-builder --linux"
+  },
+  "files": [
+    {
+      "path": "electron/main.js",
+      "content": "const { app, BrowserWindow, Menu } = require('electron')\nconst path = require('path')\nconst isDev = process.env.NODE_ENV === 'development'\n\n// Keep a global reference of the window object\nlet mainWindow\n\nfunction createWindow() {\n  // Create the browser window\n  mainWindow = new BrowserWindow({\n    width: 1200,\n    height: 800,\n    webPreferences: {\n      nodeIntegration: false,\n      contextIsolation: true,\n      enableRemoteModule: false,\n      preload: path.join(__dirname, 'preload.js')\n    },\n    icon: path.join(__dirname, 'assets/icon.png'), // 应用图标\n    show: false // 先不显示，等待ready-to-show事件\n  })\n\n  // Load the app\n  if (isDev) {\n    mainWindow.loadURL('http://localhost:5173')\n    // Open DevTools in development\n    mainWindow.webContents.openDevTools()\n  } else {\n    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))\n  }\n\n  // Show window when ready\n  mainWindow.once('ready-to-show', () => {\n    mainWindow.show()\n  })\n\n  // Emitted when the window is closed\n  mainWindow.on('closed', () => {\n    mainWindow = null\n  })\n\n  // Handle window controls via IPC or other events here\n}\n\n// This method will be called when Electron has finished initialization\napp.whenReady().then(() => {\n  createWindow()\n\n  // On macOS, re-create window when dock icon is clicked\n  app.on('activate', () => {\n    if (BrowserWindow.getAllWindows().length === 0) {\n      createWindow()\n    }\n  })\n})\n\n// Quit when all windows are closed\napp.on('window-all-closed', () => {\n  if (process.platform !== 'darwin') {\n    app.quit()\n  }\n})\n\n// Security: Prevent new window creation\napp.on('web-contents-created', (event, contents) => {\n  contents.on('new-window', (event, navigationUrl) => {\n    event.preventDefault()\n  })\n})\n\n// Set application menu\nconst template = [\n  {\n    label: 'File',\n    submenu: [\n      {\n        label: 'Quit',\n        accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',\n        click: () => {\n          app.quit()\n        }\n      }\n    ]\n  },\n  {\n    label: 'Edit',\n    submenu: [\n      { role: 'undo' },\n      { role: 'redo' },\n      { type: 'separator' },\n      { role: 'cut' },\n      { role: 'copy' },\n      { role: 'paste' }\n    ]\n  },\n  {\n    label: 'View',\n    submenu: [\n      { role: 'reload' },\n      { role: 'forceReload' },\n      { role: 'toggleDevTools' },\n      { type: 'separator' },\n      { role: 'resetZoom' },\n      { role: 'zoomIn' },\n      { role: 'zoomOut' },\n      { type: 'separator' },\n      { role: 'togglefullscreen' }\n    ]\n  },\n  {\n    label: 'Window',\n    submenu: [\n      { role: 'minimize' },\n      { role: 'close' }\n    ]\n  }\n]\n\nconst menu = Menu.buildFromTemplate(template)\nMenu.setApplicationMenu(menu)"
+    },
+    {
+      "path": "electron/preload.js",
+      "content": "const { contextBridge, ipcRenderer } = require('electron')\n\n// Expose protected methods that allow the renderer process to use\n// the ipcRenderer without exposing the entire object\ncontextBridge.exposeInMainWorld('electronAPI', {\n  // Example: expose a method to send messages to main process\n  sendMessage: (message) => ipcRenderer.invoke('send-message', message),\n  \n  // Example: expose a method to receive messages from main process\n  onMessage: (callback) => ipcRenderer.on('message', callback),\n  \n  // Example: get app version\n  getVersion: () => ipcRenderer.invoke('get-version'),\n  \n  // Example: minimize window\n  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),\n  \n  // Example: close window\n  closeWindow: () => ipcRenderer.invoke('close-window')\n})\n\n// Remove the loading text and show the app when ready\nwindow.addEventListener('DOMContentLoaded', () => {\n  const replaceText = (selector, text) => {\n    const element = document.getElementById(selector)\n    if (element) element.innerText = text\n  }\n\n  for (const type of ['chrome', 'node', 'electron']) {\n    replaceText(`${type}-version`, process.versions[type])\n  }\n})"
+    },
+    {
+      "path": "electron-builder.config.js",
+      "content": "module.exports = {\n  appId: 'com.example.app',\n  productName: 'My Electron App',\n  directories: {\n    output: 'release'\n  },\n  files: [\n    'dist/**/*',\n    'electron/**/*',\n    'node_modules/**/*',\n    'package.json'\n  ],\n  mac: {\n    category: 'public.app-category.productivity',\n    target: [\n      {\n        target: 'dmg',\n        arch: ['x64', 'arm64']\n      }\n    ]\n  },\n  win: {\n    target: [\n      {\n        target: 'nsis',\n        arch: ['x64']\n      }\n    ]\n  },\n  linux: {\n    target: [\n      {\n        target: 'AppImage',\n        arch: ['x64']\n      }\n    ]\n  },\n  nsis: {\n    oneClick: false,\n    allowToChangeInstallationDirectory: true\n  }\n}"
+    }
+  ],
+  "viteConfig": {
+    "base": "./",
+    "build": {
+      "outDir": "dist",
+      "emptyOutDir": true
+    }
+  },
+  "defaultConfig": {
+    "main": "electron/main.js",
+    "homepage": "./",
+    "build": {
+      "appId": "com.example.app",
+      "productName": "My Electron App",
+      "directories": {
+        "output": "release"
+      }
+    }
+  }
+}

@@ -4,12 +4,14 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
-  ErrorCode,
   ListToolsRequestSchema,
-  McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { generateScaffold } from './tools/generateScaffold.js';
 import type { GenerateScaffoldParams } from './types/index.js';
+import { ResponseFormatter } from './utils/ResponseFormatter.js';
+import { MCPErrorHandler } from './utils/MCPErrorHandler.js';
+import { MessageTemplates } from './utils/MessageTemplates.js';
+import { getAllToolSchemas, isValidToolName } from './config/toolSchemas.js';
 
 class ScaffoldMCPServer {
   private server: Server;
@@ -30,98 +32,25 @@ class ScaffoldMCPServer {
     // 注册工具列表处理器
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: [
-          {
-            name: 'generateScaffold',
-            description: '生成前端项目脚手架，支持 Vue3、React 等技术栈',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                tech_stack: {
-                  type: ['string', 'array'],
-                  description: '技术栈，可以是字符串（如 "vue3+ts"）或数组（如 ["vue3", "typescript", "vite"]）',
-                  examples: ['vue3+ts', 'react+ts+vite', ['vue3', 'typescript', 'pinia']]
-                },
-                project_name: {
-                  type: 'string',
-                  description: '项目名称，默认为 "my-project"',
-                  default: 'my-project'
-                },
-                output_dir: {
-                  type: 'string',
-                  description: '输出目录，默认为当前目录',
-                  default: '.'
-                },
-                extra_tools: {
-                  type: 'array',
-                  items: {
-                    type: 'string'
-                  },
-                  description: '额外的工具，如 ["eslint", "prettier", "jest", "husky"]',
-                  default: []
-                },
-                options: {
-                  type: 'object',
-                  properties: {
-                    force: {
-                      type: 'boolean',
-                      description: '是否强制覆盖已存在的目录',
-                      default: false
-                    },
-                    install: {
-                      type: 'boolean',
-                      description: '是否自动安装依赖',
-                      default: true
-                    },
-                    dryRun: {
-                      type: 'boolean',
-                      description: '是否只预览不实际生成文件',
-                      default: false
-                    },
-                    testRunner: {
-                      type: 'string',
-                      enum: ['jest', 'vitest'],
-                      description: '测试运行器选择',
-                      default: 'jest'
-                    }
-                  }
-                }
-              },
-              required: ['tech_stack']
-            }
-          }
-        ]
+        tools: getAllToolSchemas()
       };
     });
 
     // 注册工具调用处理器
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
-
       try {
+        const { name, arguments: args } = request.params;
+
         switch (name) {
           case 'generateScaffold':
-            // 验证参数
-            if (!args || typeof args !== 'object' || !('tech_stack' in args)) {
-              throw new McpError(
-                ErrorCode.InvalidParams,
-                'Missing required parameter: tech_stack'
-              );
-            }
+            MCPErrorHandler.validateRequiredParam(args, 'tech_stack');
             return await this.handleGenerateScaffold(args as unknown as GenerateScaffoldParams);
           
           default:
-            throw new McpError(
-              ErrorCode.MethodNotFound,
-              `Unknown tool: ${name}`
-            );
+            throw MCPErrorHandler.handleUnknownTool(name);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Tool execution failed: ${errorMessage}`
-        );
+        throw MCPErrorHandler.handleToolError(error, request.params.name);
       }
     });
   }
@@ -131,71 +60,41 @@ class ScaffoldMCPServer {
       const result = await generateScaffold(params);
       
       // 检查生成是否成功
-      if (result.templateSource === 'failed' || result.templateSource?.startsWith('生成失败')) {
+      if (ResponseFormatter.isFailureResult(result)) {
+        const errorMessage = MessageTemplates.renderError({
+          projectName: result.projectName,
+          targetPath: result.targetPath,
+          errorMessage: result.templateSource || '未知错误',
+          fileCount: result.files.length,
+          directoryStructure: result.tree.name,
+          processLogs: MessageTemplates.renderProcessLogs(result.processLogs || [])
+        });
+
         return {
-          content: [
-            {
-              type: 'text',
-              text: `❌ 脚手架生成失败！
-
-📁 项目名称: ${result.projectName}
-📍 目标路径: ${result.targetPath}
-🔧 失败原因: ${result.templateSource || '未知错误'}
-
-📊 生成统计:
-- 总文件数: ${result.files.length}
-- 目录结构: ${result.tree.name}
-
-${result.processLogs && result.processLogs.length > 0 ? `🔍 过程日志:
-${result.processLogs.map(log => `  ${log}`).join('\n')}
-
-` : ''}💡 建议:
-1. 检查网络连接是否正常
-2. 确认模板配置是否正确
-3. 查看详细错误日志`
-            }
-          ],
+          content: [{ type: 'text', text: errorMessage }],
           isError: true
         };
       }
       
+      const successMessage = MessageTemplates.renderSuccess({
+        projectName: result.projectName,
+        targetPath: result.targetPath,
+        templateSource: result.templateSource || '未知',
+        fileCount: result.files.length,
+        directoryTree: this.formatDirectoryTree(result.tree),
+        processLogs: MessageTemplates.renderProcessLogs(result.processLogs || [])
+      });
+
       return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ 脚手架生成成功！
-
-📁 项目名称: ${result.projectName}
-📍 生成路径: ${result.targetPath}
-🔧 模板来源: ${result.templateSource || '未知'}
-
-📊 生成统计:
-- 总文件数: ${result.files.length}
-- 目录结构: 
-${this.formatDirectoryTree(result.tree)}
-
-${result.processLogs && result.processLogs.length > 0 ? `🔍 过程日志:
-${result.processLogs.map(log => `  ${log}`).join('\n')}
-
-` : ''}🎉 项目已成功创建，可以开始开发了！
-
-💡 快速开始:
-  cd ${result.projectName}
-  npm install
-  npm start`
-          }
-        ]
+        content: [{ type: 'text', text: successMessage }]
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = MessageTemplates.renderError({
+        errorMessage: MCPErrorHandler.extractErrorMessage(error)
+      });
       
       return {
-        content: [
-          {
-            type: 'text',
-            text: `❌ 脚手架生成失败: ${errorMessage}`
-          }
-        ],
+        content: [{ type: 'text', text: errorMessage }],
         isError: true
       };
     }

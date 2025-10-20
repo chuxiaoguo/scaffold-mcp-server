@@ -16,93 +16,239 @@
       "name": "react-webpack-typescript",
       "version": "1.0.0",
       "description": "React + Webpack + TypeScript + Ant Design 项目模板",
-      "keywords": ["react项目", "webpack构建", "typescript开发", "企业级应用", "管理后台", "中后台系统"],
+      "keywords": [
+        "react项目",
+        "webpack构建",
+        "typescript开发",
+        "企业级应用",
+        "管理后台",
+        "中后台系统"
+      ],
       "matching": {
-        "required": ["framework"],
+        "required": [
+          "framework"
+        ],
         "core": {
-          "framework": ["react"],
-          "builder": ["webpack"],
-          "language": ["typescript", "javascript"]
+          "framework": [
+            "react"
+          ],
+          "builder": [
+            "webpack"
+          ],
+          "language": [
+            "typescript",
+            "javascript"
+          ]
         },
         "optional": {
-          "ui": ["antd"],
-          "style": ["tailwindcss", "less", "css"],
-          "state": ["redux", "zustand"],
-          "router": ["react-router"]
+          "ui": [
+            "antd"
+          ],
+          "style": [
+            "tailwindcss",
+            "less",
+            "css"
+          ],
+          "state": [
+            "redux",
+            "zustand"
+          ],
+          "router": [
+            "react-router"
+          ]
         },
-        "conflicts": ["vue", "vue3", "element-plus", "antd-vue"]
+        "conflicts": [
+          "vue",
+          "vue3",
+          "element-plus",
+          "antd-vue"
+        ]
       },
       "priority": 100,
-      "tags": ["react", "webpack", "typescript", "antd", "spa"]
+      "tags": [
+        "react",
+        "webpack",
+        "typescript",
+        "antd",
+        "spa"
+      ]
     },
     "vue3-vite-typescript": {
       "name": "vue3-vite-typescript",
       "version": "1.0.0",
       "description": "Vue3 + Vite + TypeScript + Element Plus 项目模板",
-      "keywords": ["vue3项目", "vite构建", "typescript开发", "现代化应用", "快速开发", "组件化"],
+      "keywords": [
+        "vue3项目",
+        "vite构建",
+        "typescript开发",
+        "现代化应用",
+        "快速开发",
+        "组件化"
+      ],
       "matching": {
-        "required": ["framework"],
+        "required": [
+          "framework"
+        ],
         "core": {
-          "framework": ["vue3", "vue"],
-          "builder": ["vite"],
-          "language": ["typescript", "javascript"]
+          "framework": [
+            "vue3",
+            "vue"
+          ],
+          "builder": [
+            "vite"
+          ],
+          "language": [
+            "typescript",
+            "javascript"
+          ]
         },
         "optional": {
-          "ui": ["element-plus"],
-          "style": ["tailwindcss", "less", "css"],
-          "state": ["pinia", "vuex"],
-          "router": ["vue-router"]
+          "ui": [
+            "element-plus"
+          ],
+          "style": [
+            "tailwindcss",
+            "less",
+            "css"
+          ],
+          "state": [
+            "pinia",
+            "vuex"
+          ],
+          "router": [
+            "vue-router"
+          ]
         },
-        "conflicts": ["react", "antd", "webpack"]
+        "conflicts": [
+          "react",
+          "antd",
+          "webpack"
+        ]
       },
       "priority": 100,
-      "tags": ["vue3", "vite", "typescript", "element-plus", "spa"]
+      "tags": [
+        "vue3",
+        "vite",
+        "typescript",
+        "element-plus",
+        "spa"
+      ]
     },
     "electron-vite-vue3": {
       "name": "electron-vite-vue3",
       "version": "1.0.0",
-      "description": "Electron + Vite + Vue3 + TypeScript 项目模板",
-      "keywords": ["electron应用", "桌面应用", "跨平台", "vue3开发", "客户端应用"],
+      "description": "Electron + Vue3 + Vite + TypeScript 桌面应用模板",
+      "keywords": [
+        "electron应用",
+        "桌面应用",
+        "vue3项目",
+        "vite构建",
+        "typescript开发",
+        "跨平台应用"
+      ],
       "matching": {
-        "required": ["framework"],
+        "required": [
+          "builder"
+        ],
         "core": {
-          "framework": ["vue3", "vue"],
-          "builder": ["electron-vite"],
-          "language": ["typescript", "javascript"]
+          "framework": [
+            "vue3",
+            "vue"
+          ],
+          "builder": [
+            "electron-vite"
+          ],
+          "language": [
+            "typescript",
+            "javascript"
+          ]
         },
         "optional": {
-          "ui": ["element-plus"],
-          "style": ["tailwindcss", "less", "css"],
-          "state": ["pinia", "vuex"],
-          "router": ["vue-router"]
+          "ui": [
+            "element-plus"
+          ],
+          "style": [
+            "tailwindcss",
+            "less",
+            "css"
+          ],
+          "state": [
+            "pinia",
+            "vuex"
+          ],
+          "router": [
+            "vue-router"
+          ]
         },
-        "conflicts": ["react", "antd"]
+        "conflicts": [
+          "react",
+          "antd"
+        ]
       },
-      "priority": 90,
-      "tags": ["electron", "vue3", "vite", "typescript"]
+      "priority": 120,
+      "tags": [
+        "electron",
+        "vue3",
+        "vite",
+        "typescript"
+      ]
     },
     "umijs": {
       "name": "umijs",
       "version": "1.0.0",
       "description": "UmiJS + React + TypeScript + Ant Design 项目模板",
-      "keywords": ["umi框架", "企业级框架", "约定式路由", "插件化", "开箱即用"],
+      "keywords": [
+        "umi框架",
+        "企业级框架",
+        "约定式路由",
+        "插件化",
+        "开箱即用"
+      ],
       "matching": {
-        "required": ["framework"],
+        "required": [
+          "framework"
+        ],
         "core": {
-          "framework": ["react"],
-          "builder": ["umi"],
-          "language": ["typescript", "javascript"]
+          "framework": [
+            "react"
+          ],
+          "builder": [
+            "umi"
+          ],
+          "language": [
+            "typescript",
+            "javascript"
+          ]
         },
         "optional": {
-          "ui": ["antd"],
-          "style": ["less", "css"],
-          "state": ["dva", "redux"],
-          "router": ["umi-router"]
+          "ui": [
+            "antd"
+          ],
+          "style": [
+            "less",
+            "css"
+          ],
+          "state": [
+            "dva",
+            "redux"
+          ],
+          "router": [
+            "umi-router"
+          ]
         },
-        "conflicts": ["vue", "vue3", "element-plus"]
+        "conflicts": [
+          "vue",
+          "vue3",
+          "element-plus"
+        ]
       },
       "priority": 80,
-      "tags": ["umi", "react", "typescript", "antd"]
+      "tags": [
+        "umi",
+        "react",
+        "typescript",
+        "antd"
+      ]
     }
   }
 }

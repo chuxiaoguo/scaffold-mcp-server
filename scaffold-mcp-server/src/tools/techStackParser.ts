@@ -10,6 +10,9 @@ export function parseTechStack(techStack: string | string[]): TechStack {
     // 解析字符串格式，如 "vue3+ts+vite" 或 "react vite typescript"
     const parts = techStack.toLowerCase().split(/[+\-_\s]+/).filter(part => part.trim());
     
+    // 检查是否包含 electron，如果包含则优先处理
+    const hasElectron = parts.includes('electron');
+    
     parts.forEach(part => {
       switch (part) {
         case 'vue3':
@@ -31,7 +34,8 @@ export function parseTechStack(techStack: string | string[]): TechStack {
           result.language = 'javascript';
           break;
         case 'vite':
-          result.builder = 'vite';
+          // 如果有 electron，则设置为 electron-vite，否则设置为 vite
+          result.builder = hasElectron ? 'electron-vite' : 'vite';
           break;
         case 'webpack':
           result.builder = 'webpack';
@@ -160,6 +164,12 @@ export function normalizeTechStack(tech_stack: any): TechStack {
     if (objStack.language) {
       techStack.language = objStack.language;
     }
+  }
+  
+  // 确保 electron-vite 不会被错误地转换
+  // 如果是 electron-vite 构建器，自动推断框架
+  if (techStack.builder === 'electron-vite' && !techStack.framework) {
+    techStack.framework = 'vue3'; // electron-vite 默认使用 vue3
   }
   
   return techStack;

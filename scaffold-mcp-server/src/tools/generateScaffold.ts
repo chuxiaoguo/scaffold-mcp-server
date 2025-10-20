@@ -5,8 +5,7 @@ import type {
 } from "../types/index";
 import { smartMatchFixedTemplate, parseTechStack } from "../core/matcher.js";
 import { SmartMatcher, type MatchResult } from "../core/matcher/SmartMatcher.js";
-import { getTemplateManager } from "../core/templateManager/index.js";
-import { getTemplateConfigManager } from "../core/config/templateConfigManager.js";
+import { getTemplateSync } from "../core/sync/TemplateSync.js";
 import { NonFixedBuilder } from "../core/nonFixedBuilder/index.js";
 import { ToolInjectorManager } from "../core/injectors/index.js";
 import { generateProject } from "./projectGenerator.js";
@@ -54,27 +53,49 @@ export async function generateScaffold(
   params: GenerateScaffoldParams
 ): Promise<GenerateResult> {
   const processLogs: string[] = [];
-
+  
   try {
-    processLogs.push(`🚀 开始生成脚手架项目...`);
     processLogs.push(`📋 原始参数: ${JSON.stringify(params, null, 2)}`);
     console.log(`🚀 开始生成脚手架项目...`);
     console.log(`📋 原始参数:`, JSON.stringify(params, null, 2));
 
-    // 0. 更新模板（如果需要）
-    processLogs.push(`🔄 检查模板更新...`);
-    const templateManager = getTemplateManager();
+    // 先解析路径和项目名称
+    const { projectPath, projectName } = resolveProjectPathAndName(params);
+
+    // 0. 统一模板同步（替代原来的两个步骤）
+    processLogs.push(`🔄 开始统一模板同步...`);
+    const templateSync = getTemplateSync();
     
-    try {
-      const updateResult = await templateManager.updateTemplatesIfNeeded();
-      if (updateResult.updated) {
-        processLogs.push(`✅ 模板已更新`);
+    const syncResult = await templateSync.syncTemplates();
+    
+    // 添加同步过程日志
+    syncResult.logs.forEach((log: string) => {
+      processLogs.push(`   ${log}`);
+    });
+    
+    if (syncResult.success) {
+      if (syncResult.updated) {
+        processLogs.push(`✅ 模板已更新到最新版本`);
       } else {
         processLogs.push(`ℹ️ 模板已是最新版本`);
       }
-    } catch (updateError: any) {
-      processLogs.push(`⚠️ 模板更新失败，使用本地模板: ${updateError.message}`);
-      console.warn('模板更新失败，使用本地模板:', updateError);
+    } else {
+      processLogs.push(`⚠️ 模板同步失败，使用现有配置: ${syncResult.error || '未知错误'}`);
+      console.warn('模板同步失败:', syncResult.error);
+    }
+    
+    // 获取同步后的配置
+    const syncedTemplateConfig = syncResult.config;
+    if (!syncedTemplateConfig) {
+      processLogs.push(`❌ 无法获取模板配置`);
+      return {
+        projectName,
+        targetPath: projectPath,
+        tree: { name: "config-error", type: "directory", path: projectPath },
+        files: [],
+        templateSource: `无法获取模板配置`,
+        processLogs,
+      };
     }
 
     // 1. 智能路径解析
@@ -89,8 +110,6 @@ export async function generateScaffold(
     processLogs.push(`   - 解析后项目名称: ${pathInfo.resolvedProjectName}`);
     processLogs.push(`   - 是否绝对路径: ${pathInfo.isAbsolutePath}`);
     processLogs.push(`   - 是否有效工作空间: ${pathInfo.isValidWorkspace}`);
-
-    const { projectPath, projectName } = resolveProjectPathAndName(params);
     
     // 2. 路径验证
     processLogs.push(`🔍 验证项目路径...`);
@@ -128,19 +147,9 @@ export async function generateScaffold(
       ? params.tech_stack.join(' ') 
       : params.tech_stack;
     
-    // 获取模板配置
-    const templateConfigManager = getTemplateConfigManager();
-    const templateConfigResult = await templateConfigManager.getTemplatesIndex();
-    const templateConfig = templateConfigResult.config;
-    const configLogs = templateConfigResult.logs;
-    
-    // 将配置加载日志添加到processLogs中
-    processLogs.push(`📚 模板配置加载过程:`);
-    configLogs.forEach(log => {
-      processLogs.push(`   ${log}`);
-    });
-    
-    const templatesObj = templateConfig?.templates || {};
+    // 使用同步后的配置（移除重复的配置获取逻辑）
+    processLogs.push(`📚 使用已同步的模板配置`);
+    const templatesObj = syncedTemplateConfig?.templates || {};
     
     // 将templates对象转换为数组
     const templatesArray = Object.entries(templatesObj).map(([id, template]: [string, any]) => ({

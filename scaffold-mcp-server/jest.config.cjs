@@ -27,7 +27,7 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(degit)/)',
   ],
-  testEnvironment: 'node',
+  resolver: '<rootDir>/jest.resolver.cjs',
   globals: {
     'process.env': {
       NODE_ENV: 'test',

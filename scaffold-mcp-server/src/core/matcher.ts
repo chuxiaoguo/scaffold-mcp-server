@@ -211,19 +211,25 @@ function extractTechnologies(input: string): string[] {
  * 将技术分配到技术栈对象
  */
 function assignTechToStack(techStack: TechStack, tech: string): void {
+  // 特殊处理：electron 作为构建工具时映射到 electron-vite，优先级最高
+  if (tech === 'electron') {
+    techStack.builder = 'electron-vite';
+    // 不再默认设置框架，让用户明确指定
+    return; // 提前返回，避免被后续的 vite 覆盖
+  }
+  
   // 框架
   if (['vue3', 'vue2', 'react'].includes(tech)) {
     techStack.framework = tech as 'vue3' | 'vue2' | 'react';
   }
   
-  // 构建工具
+  // 构建工具 - electron-vite 优先级最高，避免被普通 vite 覆盖
   if (['vite', 'webpack', 'electron-vite', 'umi'].includes(tech)) {
+    // 如果已经设置了 electron-vite，不要被普通 vite 覆盖
+    if (techStack.builder === 'electron-vite' && tech === 'vite') {
+      return;
+    }
     techStack.builder = tech as 'vite' | 'webpack' | 'electron-vite' | 'umi';
-  }
-  
-  // 特殊处理：electron 作为构建工具时映射到 electron-vite
-  if (tech === 'electron') {
-    techStack.builder = 'electron-vite';
   }
   
   // 语言
