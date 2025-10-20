@@ -1,9 +1,19 @@
 {
   "name": "scaffold-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for generating frontend scaffolds",
   "main": "dist/index.js",
   "type": "module",
+  "author": "chuxiaoguo <chuxiaoguo@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chuxiaoguo/scaffold-mcp-server.git"
+  },
+  "homepage": "https://github.com/chuxiaoguo/scaffold-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/chuxiaoguo/scaffold-mcp-server/issues"
+  },
   "files": [
     "dist/",
     "scaffold-template/",
@@ -20,7 +30,18 @@
     "test:coverage": "jest --coverage",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "pack:check": "npm pack --dry-run"
+    "pack:check": "npm pack --dry-run",
+    "release": "node scripts/publish.cjs",
+    "release:patch": "node scripts/publish.cjs patch",
+    "release:minor": "node scripts/publish.cjs minor",
+    "release:major": "node scripts/publish.cjs major",
+    "release:beta": "node scripts/publish.cjs patch beta",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "pre-publish-check": "node scripts/pre-publish-check.cjs",
+    "version:manage": "node scripts/version-manager.cjs",
+    "changelog:generate": "node scripts/version-manager.cjs"
   },
   "keywords": [
     "mcp",
@@ -28,8 +49,6 @@
     "frontend",
     "generator"
   ],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
     "degit": "^2.8.4"
