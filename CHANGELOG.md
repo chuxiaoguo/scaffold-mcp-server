@@ -2,6 +2,16 @@
 
 所有重要的项目更改都会记录在此文件中。
 
+## [1.1.2] - 2025-10-20
+
+### Changes
+- ec9afcf fix: add bin configuration for npx support
+- 2578159 chore: release v1.1.1
+- bc0205c 删除有问题的测试文件以修复发布流程
+- 3c86ab2 feat: 添加自动化npm包发布脚本和完善项目配置
+- 10b7fb6 Initial commit: Scaffold MCP Server with templates and npm package fixes
+
+
 ## [1.1.1] - 2025-10-20
 
 ### Changes
