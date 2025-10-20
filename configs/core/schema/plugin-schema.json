@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plugin Configuration Schema",
+  "description": "Schema for plugin configuration files",
+  "type": "object",
+  "required": ["metadata", "activation", "dependencies"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["name", "version", "category"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Plugin name"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Plugin version (semver)"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["ui", "state-management", "builder", "framework", "linting", "testing", "tools"],
+          "description": "Plugin category"
+        },
+        "description": {
+          "type": "string",
+          "description": "Plugin description"
+        },
+        "author": {
+          "type": "string",
+          "description": "Plugin author"
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri",
+          "description": "Plugin homepage URL"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Plugin keywords"
+        }
+      }
+    },
+    "activation": {
+      "type": "object",
+      "description": "Plugin activation conditions",
+      "properties": {
+        "techStack": {
+          "type": "object",
+          "properties": {
+            "framework": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["vue", "vue3", "react", "angular", "svelte", "electron"]
+              }
+            },
+            "builder": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["vite", "webpack", "rollup", "parcel", "umi"]
+              }
+            },
+            "language": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["javascript", "typescript"]
+              }
+            },
+            "stateManagement": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["pinia", "vuex", "redux", "redux-toolkit", "rtk", "mobx", "zustand"]
+              }
+            }
+          }
+        },
+        "ui": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stateManagement": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "builder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "framework": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Package name"
+          },
+          "version": {
+            "type": "string",
+            "description": "Package version"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["dependencies", "devDependencies", "peerDependencies"],
+            "description": "Dependency type"
+          },
+          "condition": {
+            "type": "object",
+            "description": "Conditional installation"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "type": "object",
+      "description": "NPM scripts to add",
+      "patternProperties": {
+        "^[a-zA-Z0-9:_-]+$": {
+          "type": "string"
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "content"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path"
+          },
+          "content": {
+            "type": "string",
+            "description": "File content (supports Handlebars templates)"
+          },
+          "condition": {
+            "type": "object",
+            "description": "Conditional file creation"
+          }
+        }
+      }
+    },
+    "viteConfig": {
+      "type": "object",
+      "description": "Vite configuration modifications"
+    },
+    "webpackConfig": {
+      "type": "object",
+      "description": "Webpack configuration modifications"
+    },
+    "tsConfig": {
+      "type": "object",
+      "description": "TypeScript configuration modifications"
+    },
+    "defaultConfig": {
+      "type": "object",
+      "description": "Default plugin configuration"
+    },
+    "afterActivation": {
+      "type": "object",
+      "description": "Post-activation hooks"
+    }
+  }
+}

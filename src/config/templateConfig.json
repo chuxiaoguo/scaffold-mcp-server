@@ -1,0 +1,12 @@
+{
+  "remoteConfig": {
+    "enabled": true,
+    "repository": {
+      "url": "https://github.com/chuxiaoguo/scaffold-mcp-server",
+      "branch": "mac",
+      "targetFolder": "scaffold-mcp-server/scaffold-template/templates.config.json"
+    },
+    "checkInterval": "daily",
+    "fallbackToLocal": true
+  }
+}

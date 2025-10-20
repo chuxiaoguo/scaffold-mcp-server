@@ -1,0 +1,99 @@
+{{!-- Base Template for Plugin Configuration --}}
+{{!-- This template provides common structure for plugin configurations --}}
+
+{
+  "metadata": {
+    "name": "{{pluginName}}",
+    "version": "{{version}}",
+    "category": "{{category}}",
+    {{#if description}}
+    "description": "{{description}}",
+    {{/if}}
+    {{#if author}}
+    "author": "{{author}}",
+    {{/if}}
+    {{#if homepage}}
+    "homepage": "{{homepage}}",
+    {{/if}}
+    {{#if keywords}}
+    "keywords": [{{#each keywords}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}]
+    {{/if}}
+  },
+  "activation": {
+    {{#if activation.framework}}
+    "framework": [{{#each activation.framework}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+    {{/if}}
+    {{#if activation.ui}}
+    "ui": [{{#each activation.ui}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+    {{/if}}
+    {{#if activation.stateManagement}}
+    "stateManagement": [{{#each activation.stateManagement}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+    {{/if}}
+    {{#if activation.builder}}
+    "builder": [{{#each activation.builder}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+    {{/if}}
+    {{#if activation.techStack}}
+    "techStack": {
+      {{#if activation.techStack.framework}}
+      "framework": [{{#each activation.techStack.framework}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+      {{/if}}
+      {{#if activation.techStack.builder}}
+      "builder": [{{#each activation.techStack.builder}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+      {{/if}}
+      {{#if activation.techStack.language}}
+      "language": [{{#each activation.techStack.language}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+      {{/if}}
+      {{#if activation.techStack.stateManagement}}
+      "stateManagement": [{{#each activation.techStack.stateManagement}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}]
+      {{/if}}
+    }
+    {{/if}}
+  },
+  "dependencies": [
+    {{#each dependencies}}
+    {
+      "name": "{{name}}",
+      "version": "{{version}}",
+      "type": "{{type}}"
+      {{#if condition}}
+      ,"condition": {{{json condition}}}
+      {{/if}}
+    }{{#unless @last}},{{/unless}}
+    {{/each}}
+  ]
+  {{#if scripts}}
+  ,"scripts": {
+    {{#each scripts}}
+    "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
+    {{/each}}
+  }
+  {{/if}}
+  {{#if files}}
+  ,"files": [
+    {{#each files}}
+    {
+      "path": "{{path}}",
+      "content": {{{json content}}}
+      {{#if condition}}
+      ,"condition": {{{json condition}}}
+      {{/if}}
+    }{{#unless @last}},{{/unless}}
+    {{/each}}
+  ]
+  {{/if}}
+  {{#if viteConfig}}
+  ,"viteConfig": {{{json viteConfig}}}
+  {{/if}}
+  {{#if webpackConfig}}
+  ,"webpackConfig": {{{json webpackConfig}}}
+  {{/if}}
+  {{#if tsConfig}}
+  ,"tsConfig": {{{json tsConfig}}}
+  {{/if}}
+  {{#if defaultConfig}}
+  ,"defaultConfig": {{{json defaultConfig}}}
+  {{/if}}
+  {{#if afterActivation}}
+  ,"afterActivation": {{{json afterActivation}}}
+  {{/if}}
+}

@@ -1,0 +1,11 @@
+{
+  "cline.mcpServers": {
+    "scaffold-generator": {
+      "command": "node",
+      "args": ["/Users/username/scaffold-mcp-server/dist/index.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

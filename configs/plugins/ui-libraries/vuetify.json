@@ -1,0 +1,151 @@
+{
+  "metadata": {
+    "name": "vuetify",
+    "version": "1.0.0",
+    "description": "Vuetify Vue.js Material Design组件框架插件",
+    "author": "Scaffold Generator",
+    "homepage": "https://vuetifyjs.com/",
+    "keywords": ["vuetify", "vue", "material-design", "ui", "components"],
+    "category": "ui"
+  },
+  "activation": {
+    "techStack": {
+      "framework": ["vue3", "vue"],
+      "ui": ["vuetify", "material-design"]
+    }
+  },
+  "dependencies": [
+    {
+      "name": "vuetify",
+      "version": "^3.4.8",
+      "type": "dependencies"
+    },
+    {
+      "name": "@mdi/font",
+      "version": "^7.3.67",
+      "type": "dependencies"
+    },
+    {
+      "name": "material-design-icons-iconfont",
+      "version": "^6.7.0",
+      "type": "dependencies",
+      "condition": "context.extraTools?.includes('material-icons')"
+    },
+    {
+      "name": "vite-plugin-vuetify",
+      "version": "^2.0.1",
+      "type": "devDependencies",
+      "condition": "context.techStack.buildTool?.includes('vite')"
+    },
+    {
+      "name": "webpack-plugin-vuetify",
+      "version": "^2.0.1",
+      "type": "devDependencies",
+      "condition": "context.techStack.buildTool?.includes('webpack')"
+    },
+    {
+      "name": "sass",
+      "version": "^1.69.5",
+      "type": "devDependencies"
+    }
+  ],
+  "scripts": [],
+  "files": [
+    {
+      "path": "src/plugins/vuetify.ts",
+      "content": "import { createVuetify } from 'vuetify';\nimport * as components from 'vuetify/components';\nimport * as directives from 'vuetify/directives';\nimport { aliases, mdi } from 'vuetify/iconsets/mdi';\n{{#if (includes extraTools 'material-icons')}}\nimport { md } from 'vuetify/iconsets/md';\n{{/if}}\n\n// Styles\nimport 'vuetify/styles';\nimport '@mdi/font/css/materialdesignicons.css';\n{{#if (includes extraTools 'material-icons')}}\nimport 'material-design-icons-iconfont/dist/material-design-icons.css';\n{{/if}}\n\nexport default createVuetify({\n  components,\n  directives,\n  icons: {\n    defaultSet: 'mdi',\n    aliases,\n    sets: {\n      mdi,\n{{#if (includes extraTools 'material-icons')}}\n      md,\n{{/if}}\n    },\n  },\n  theme: {\n    defaultTheme: 'light',\n    themes: {\n      light: {\n        colors: {\n          primary: '#1976D2',\n          secondary: '#424242',\n          accent: '#82B1FF',\n          error: '#FF5252',\n          info: '#2196F3',\n          success: '#4CAF50',\n          warning: '#FFC107',\n        },\n      },\n      dark: {\n        colors: {\n          primary: '#2196F3',\n          secondary: '#424242',\n          accent: '#FF4081',\n          error: '#FF5252',\n          info: '#2196F3',\n          success: '#4CAF50',\n          warning: '#FB8C00',\n        },\n      },\n    },\n  },\n});\n",
+      "encoding": "utf8",
+      "condition": "context.techStack.language?.includes('typescript') && !context.hasFile('src/plugins/vuetify.ts')"
+    },
+    {
+      "path": "src/plugins/vuetify.js",
+      "content": "import { createVuetify } from 'vuetify';\nimport * as components from 'vuetify/components';\nimport * as directives from 'vuetify/directives';\nimport { aliases, mdi } from 'vuetify/iconsets/mdi';\n{{#if (includes extraTools 'material-icons')}}\nimport { md } from 'vuetify/iconsets/md';\n{{/if}}\n\n// Styles\nimport 'vuetify/styles';\nimport '@mdi/font/css/materialdesignicons.css';\n{{#if (includes extraTools 'material-icons')}}\nimport 'material-design-icons-iconfont/dist/material-design-icons.css';\n{{/if}}\n\nexport default createVuetify({\n  components,\n  directives,\n  icons: {\n    defaultSet: 'mdi',\n    aliases,\n    sets: {\n      mdi,\n{{#if (includes extraTools 'material-icons')}}\n      md,\n{{/if}}\n    },\n  },\n  theme: {\n    defaultTheme: 'light',\n    themes: {\n      light: {\n        colors: {\n          primary: '#1976D2',\n          secondary: '#424242',\n          accent: '#82B1FF',\n          error: '#FF5252',\n          info: '#2196F3',\n          success: '#4CAF50',\n          warning: '#FFC107',\n        },\n      },\n      dark: {\n        colors: {\n          primary: '#2196F3',\n          secondary: '#424242',\n          accent: '#FF4081',\n          error: '#FF5252',\n          info: '#2196F3',\n          success: '#4CAF50',\n          warning: '#FB8C00',\n        },\n      },\n    },\n  },\n});\n",
+      "encoding": "utf8",
+      "condition": "!context.techStack.language?.includes('typescript') && !context.hasFile('src/plugins/vuetify.js')"
+    },
+    {
+      "path": "src/components/HelloWorld.vue",
+      "content": "<template>\n  <v-container>\n    <v-row justify=\"center\">\n      <v-col cols=\"12\" md=\"8\">\n        <v-card class=\"mx-auto\" max-width=\"600\">\n          <v-card-title class=\"d-flex align-center\">\n            <span>欢迎使用 {{projectName}}</span>\n            <v-spacer></v-spacer>\n            <v-icon>mdi-cog</v-icon>\n          </v-card-title>\n          \n          <v-card-text class=\"text-center\">\n            <p class=\"text-body-1 mb-4\">\n              这是一个基于 Vue 3 和 Vuetify 构建的应用。\n            </p>\n            \n            <v-btn\n              color=\"primary\"\n              size=\"large\"\n              prepend-icon=\"mdi-plus\"\n              @click=\"handleClick\"\n            >\n              开始使用\n            </v-btn>\n          </v-card-text>\n        </v-card>\n      </v-col>\n    </v-row>\n    \n    <!-- Snackbar for notifications -->\n    <v-snackbar\n      v-model=\"snackbar\"\n      :timeout=\"3000\"\n      color=\"success\"\n    >\n      欢迎使用 Vuetify！\n      <template v-slot:actions>\n        <v-btn\n          color=\"white\"\n          variant=\"text\"\n          @click=\"snackbar = false\"\n        >\n          关闭\n        </v-btn>\n      </template>\n    </v-snackbar>\n  </v-container>\n</template>\n\n<script{{#if (includes language 'typescript')}} lang=\"ts\"{{/if}} setup>\nimport { ref } from 'vue';\n\nconst snackbar = ref(false);\n\nconst handleClick = () => {\n  snackbar.value = true;\n};\n</script>\n\n<style scoped>\n.v-card {\n  margin-top: 20px;\n}\n</style>\n",
+      "encoding": "utf8",
+      "condition": "!context.hasFile('src/components/HelloWorld.vue')"
+    },
+    {
+      "path": "src/styles/vuetify-custom.scss",
+      "content": "// Vuetify 自定义样式\n@use 'vuetify' with (\n  $color-pack: false\n);\n\n// 自定义主题变量\n$primary: #1976D2;\n$secondary: #424242;\n$accent: #82B1FF;\n$error: #FF5252;\n$info: #2196F3;\n$success: #4CAF50;\n$warning: #FFC107;\n\n// 自定义组件样式\n.v-btn {\n  text-transform: none !important;\n  letter-spacing: normal !important;\n}\n\n.v-card {\n  border-radius: 12px !important;\n}\n\n.v-app-bar {\n  backdrop-filter: blur(10px);\n}\n\n// 响应式断点自定义\n@media (max-width: 600px) {\n  .v-container {\n    padding: 8px;\n  }\n}\n",
+      "encoding": "utf8",
+      "condition": "context.extraTools?.includes('theme-customization') && !context.hasFile('src/styles/vuetify-custom.scss')"
+    }
+  ],
+  "integration": {
+    "vite": {
+      "plugins": [
+        {
+          "name": "vuetify",
+          "config": "vuetify({ autoImport: true })",
+          "import": "import vuetify from 'vite-plugin-vuetify';"
+        }
+      ],
+      "css": {
+        "preprocessorOptions": {
+          "scss": {
+            "additionalData": "@use 'src/styles/vuetify-custom.scss';"
+          }
+        }
+      }
+    },
+    "webpack": {
+      "plugins": [
+        {
+          "name": "VuetifyPlugin",
+          "config": "new VuetifyPlugin({ autoImport: true })",
+          "import": "const VuetifyPlugin = require('webpack-plugin-vuetify');"
+        }
+      ],
+      "rules": [
+        {
+          "test": "/\\.s[ac]ss$/i",
+          "use": [
+            "vue-style-loader",
+            "css-loader",
+            {
+              "loader": "sass-loader",
+              "options": {
+                "implementation": "sass",
+                "additionalData": "@use 'src/styles/vuetify-custom.scss';"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "typescript": {
+      "compilerOptions": {
+        "types": ["vuetify"]
+      }
+    }
+  },
+  "defaultConfig": {
+    "vuetify": {
+      "theme": {
+        "defaultTheme": "light",
+        "variations": {
+          "colors": ["primary", "secondary"],
+          "lighten": 3,
+          "darken": 3
+        }
+      },
+      "defaults": {
+        "VBtn": {
+          "color": "primary",
+          "variant": "elevated"
+        },
+        "VCard": {
+          "variant": "elevated"
+        }
+      }
+    }
+  },
+  "hooks": {
+    "afterActivation": "console.log('Vuetify plugin activated successfully')"
+  }
+}

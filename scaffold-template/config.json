@@ -1,0 +1,29 @@
+{
+  "templates": [
+    {
+      "name": "electron-vite-vue3",
+      "version": "0.0.0",
+      "lastUpdated": "2025-10-19T13:53:27.850Z",
+      "description": ""
+    },
+    {
+      "name": "react-webpack-typescript",
+      "version": "0.1.0",
+      "lastUpdated": "2025-10-19T13:53:27.851Z",
+      "description": ""
+    },
+    {
+      "name": "umijs",
+      "version": "1.0.0",
+      "lastUpdated": "2025-10-19T13:53:27.851Z",
+      "description": ""
+    },
+    {
+      "name": "vue3-vite-typescript",
+      "version": "0.0.0",
+      "lastUpdated": "2025-10-19T13:53:27.851Z",
+      "description": ""
+    }
+  ],
+  "lastCheck": "2025-10-19T13:53:27.851Z"
+}

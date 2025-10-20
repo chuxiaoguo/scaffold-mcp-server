@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "name": "redux-toolkit",
+    "version": "1.0.0",
+    "description": "Redux Toolkit React状态管理库插件，现代化的Redux开发工具",
+    "author": "Scaffold Generator",
+    "homepage": "https://redux-toolkit.js.org/",
+    "keywords": ["redux", "redux-toolkit", "react", "state-management", "rtk"],
+    "category": "state-management"
+  },
+  "activation": {
+    "techStack": {
+      "framework": ["react"],
+      "stateManagement": ["redux", "redux-toolkit", "rtk"]
+    },
+    "stateManagement": ["redux", "redux-toolkit", "rtk"]
+  },
+  "dependencies": [
+    {
+      "name": "@reduxjs/toolkit",
+      "version": "^2.0.1",
+      "type": "dependencies"
+    },
+    {
+      "name": "react-redux",
+      "version": "^9.0.4",
+      "type": "dependencies"
+    },
+    {
+      "name": "redux-persist",
+      "version": "^6.0.0",
+      "type": "dependencies",
+      "condition": "context.extraTools?.includes('persistence')"
+    },
+    {
+      "name": "@types/react-redux",
+      "version": "^7.1.33",
+      "type": "devDependencies",
+      "condition": "context.techStack.language?.includes('typescript')"
+    }
+  ],
+  "scripts": [],
+  "files": [
+    {
+      "path": "src/store/index.ts",
+      "content": "import { configureStore } from '@reduxjs/toolkit';\n{{#if (includes extraTools 'persistence')}}\nimport { persistStore, persistReducer } from 'redux-persist';\nimport storage from 'redux-persist/lib/storage';\nimport { combineReducers } from '@reduxjs/toolkit';\n{{/if}}\nimport userSlice from './slices/userSlice';\nimport appSlice from './slices/appSlice';\n\n{{#if (includes extraTools 'persistence')}}\nconst rootReducer = combineReducers({\n  user: userSlice,\n  app: appSlice,\n});\n\nconst persistConfig = {\n  key: 'root',\n  storage,\n  whitelist: ['user', 'app'], // 指定需要持久化的 reducer\n};\n\nconst persistedReducer = persistReducer(persistConfig, rootReducer);\n\nexport const store = configureStore({\n  reducer: persistedReducer,\n  middleware: (getDefaultMiddleware) =>\n    getDefaultMiddleware({\n      serializableCheck: {\n        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],\n      },\n    }),\n  devTools: process.env.NODE_ENV !== 'production',\n});\n\nexport const persistor = persistStore(store);\n{{else}}\nexport const store = configureStore({\n  reducer: {\n    user: userSlice,\n    app: appSlice,\n  },\n  devTools: process.env.NODE_ENV !== 'production',\n});\n{{/if}}\n\nexport type RootState = ReturnType<typeof store.getState>;\nexport type AppDispatch = typeof store.dispatch;\n",
+      "encoding": "utf8",
+      "condition": "context.techStack.language?.includes('typescript') && !context.hasFile('src/store/index.ts')"
+    },
+    {
+      "path": "src/store/index.js",
+      "content": "import { configureStore } from '@reduxjs/toolkit';\n{{#if (includes extraTools 'persistence')}}\nimport { persistStore, persistReducer } from 'redux-persist';\nimport storage from 'redux-persist/lib/storage';\nimport { combineReducers } from '@reduxjs/toolkit';\n{{/if}}\nimport userSlice from './slices/userSlice';\nimport appSlice from './slices/appSlice';\n\n{{#if (includes extraTools 'persistence')}}\nconst rootReducer = combineReducers({\n  user: userSlice,\n  app: appSlice,\n});\n\nconst persistConfig = {\n  key: 'root',\n  storage,\n  whitelist: ['user', 'app'], // 指定需要持久化的 reducer\n};\n\nconst persistedReducer = persistReducer(persistConfig, rootReducer);\n\nexport const store = configureStore({\n  reducer: persistedReducer,\n  middleware: (getDefaultMiddleware) =>\n    getDefaultMiddleware({\n      serializableCheck: {\n        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],\n      },\n    }),\n  devTools: process.env.NODE_ENV !== 'production',\n});\n\nexport const persistor = persistStore(store);\n{{else}}\nexport const store = configureStore({\n  reducer: {\n    user: userSlice,\n    app: appSlice,\n  },\n  devTools: process.env.NODE_ENV !== 'production',\n});\n{{/if}}\n",
+      "encoding": "utf8",
+      "condition": "!context.techStack.language?.includes('typescript') && !context.hasFile('src/store/index.js')"
+    },
+    {
+      "path": "src/store/hooks.ts",
+      "content": "import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';\nimport type { RootState, AppDispatch } from './index';\n\n// 使用类型化的 hooks\nexport const useAppDispatch = () => useDispatch<AppDispatch>();\nexport const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;\n",
+      "encoding": "utf8",
+      "condition": "context.techStack.language?.includes('typescript') && !context.hasFile('src/store/hooks.ts')"
+    },
+    {
+      "path": "src/store/slices/userSlice.ts",
+      "content": "import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';\n\ninterface User {\n  id: number;\n  name: string;\n  email: string;\n  avatar?: string;\n}\n\ninterface UserState {\n  currentUser: User | null;\n  token: string | null;\n  isLoggedIn: boolean;\n  loading: boolean;\n  error: string | null;\n}\n\nconst initialState: UserState = {\n  currentUser: null,\n  token: null,\n  isLoggedIn: false,\n  loading: false,\n  error: null,\n};\n\n// 异步 thunk actions\nexport const loginAsync = createAsyncThunk(\n  'user/login',\n  async (credentials: { email: string; password: string }, { rejectWithValue }) => {\n    try {\n      const response = await fetch('/api/login', {\n        method: 'POST',\n        headers: {\n          'Content-Type': 'application/json',\n        },\n        body: JSON.stringify(credentials),\n      });\n      \n      const data = await response.json();\n      \n      if (!response.ok) {\n        return rejectWithValue(data.message || '登录失败');\n      }\n      \n      return data;\n    } catch (error) {\n      return rejectWithValue('网络错误，请稍后重试');\n    }\n  }\n);\n\nexport const logoutAsync = createAsyncThunk(\n  'user/logout',\n  async (_, { rejectWithValue }) => {\n    try {\n      const response = await fetch('/api/logout', {\n        method: 'POST',\n      });\n      \n      if (!response.ok) {\n        return rejectWithValue('登出失败');\n      }\n      \n      return true;\n    } catch (error) {\n      return rejectWithValue('网络错误，请稍后重试');\n    }\n  }\n);\n\nconst userSlice = createSlice({\n  name: 'user',\n  initialState,\n  reducers: {\n    clearError: (state) => {\n      state.error = null;\n    },\n    updateProfile: (state, action: PayloadAction<Partial<User>>) => {\n      if (state.currentUser) {\n        state.currentUser = { ...state.currentUser, ...action.payload };\n      }\n    },\n    setToken: (state, action: PayloadAction<string>) => {\n      state.token = action.payload;\n    },\n  },\n  extraReducers: (builder) => {\n    builder\n      // 登录\n      .addCase(loginAsync.pending, (state) => {\n        state.loading = true;\n        state.error = null;\n      })\n      .addCase(loginAsync.fulfilled, (state, action) => {\n        state.loading = false;\n        state.currentUser = action.payload.user;\n        state.token = action.payload.token;\n        state.isLoggedIn = true;\n        state.error = null;\n      })\n      .addCase(loginAsync.rejected, (state, action) => {\n        state.loading = false;\n        state.error = action.payload as string;\n        state.isLoggedIn = false;\n      })\n      // 登出\n      .addCase(logoutAsync.pending, (state) => {\n        state.loading = true;\n      })\n      .addCase(logoutAsync.fulfilled, (state) => {\n        state.loading = false;\n        state.currentUser = null;\n        state.token = null;\n        state.isLoggedIn = false;\n        state.error = null;\n      })\n      .addCase(logoutAsync.rejected, (state, action) => {\n        state.loading = false;\n        state.error = action.payload as string;\n      });\n  },\n});\n\nexport const { clearError, updateProfile, setToken } = userSlice.actions;\n\n// Selectors\nexport const selectUser = (state: { user: UserState }) => state.user.currentUser;\nexport const selectIsLoggedIn = (state: { user: UserState }) => state.user.isLoggedIn;\nexport const selectUserLoading = (state: { user: UserState }) => state.user.loading;\nexport const selectUserError = (state: { user: UserState }) => state.user.error;\nexport const selectUserName = (state: { user: UserState }) => \n  state.user.currentUser?.name || '游客';\nexport const selectUserAvatar = (state: { user: UserState }) => \n  state.user.currentUser?.avatar || '';\n\nexport default userSlice.reducer;\n",
+      "encoding": "utf8",
+      "condition": "context.techStack.language?.includes('typescript') && !context.hasFile('src/store/slices/userSlice.ts')"
+    },
+    {
+      "path": "src/store/slices/userSlice.js",
+      "content": "import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';\n\nconst initialState = {\n  currentUser: null,\n  token: null,\n  isLoggedIn: false,\n  loading: false,\n  error: null,\n};\n\n// 异步 thunk actions\nexport const loginAsync = createAsyncThunk(\n  'user/login',\n  async (credentials, { rejectWithValue }) => {\n    try {\n      const response = await fetch('/api/login', {\n        method: 'POST',\n        headers: {\n          'Content-Type': 'application/json',\n        },\n        body: JSON.stringify(credentials),\n      });\n      \n      const data = await response.json();\n      \n      if (!response.ok) {\n        return rejectWithValue(data.message || '登录失败');\n      }\n      \n      return data;\n    } catch (error) {\n      return rejectWithValue('网络错误，请稍后重试');\n    }\n  }\n);\n\nexport const logoutAsync = createAsyncThunk(\n  'user/logout',\n  async (_, { rejectWithValue }) => {\n    try {\n      const response = await fetch('/api/logout', {\n        method: 'POST',\n      });\n      \n      if (!response.ok) {\n        return rejectWithValue('登出失败');\n      }\n      \n      return true;\n    } catch (error) {\n      return rejectWithValue('网络错误，请稍后重试');\n    }\n  }\n);\n\nconst userSlice = createSlice({\n  name: 'user',\n  initialState,\n  reducers: {\n    clearError: (state) => {\n      state.error = null;\n    },\n    updateProfile: (state, action) => {\n      if (state.currentUser) {\n        state.currentUser = { ...state.currentUser, ...action.payload };\n      }\n    },\n    setToken: (state, action) => {\n      state.token = action.payload;\n    },\n  },\n  extraReducers: (builder) => {\n    builder\n      // 登录\n      .addCase(loginAsync.pending, (state) => {\n        state.loading = true;\n        state.error = null;\n      })\n      .addCase(loginAsync.fulfilled, (state, action) => {\n        state.loading = false;\n        state.currentUser = action.payload.user;\n        state.token = action.payload.token;\n        state.isLoggedIn = true;\n        state.error = null;\n      })\n      .addCase(loginAsync.rejected, (state, action) => {\n        state.loading = false;\n        state.error = action.payload;\n        state.isLoggedIn = false;\n      })\n      // 登出\n      .addCase(logoutAsync.pending, (state) => {\n        state.loading = true;\n      })\n      .addCase(logoutAsync.fulfilled, (state) => {\n        state.loading = false;\n        state.currentUser = null;\n        state.token = null;\n        state.isLoggedIn = false;\n        state.error = null;\n      })\n      .addCase(logoutAsync.rejected, (state, action) => {\n        state.loading = false;\n        state.error = action.payload;\n      });\n  },\n});\n\nexport const { clearError, updateProfile, setToken } = userSlice.actions;\n\n// Selectors\nexport const selectUser = (state) => state.user.currentUser;\nexport const selectIsLoggedIn = (state) => state.user.isLoggedIn;\nexport const selectUserLoading = (state) => state.user.loading;\nexport const selectUserError = (state) => state.user.error;\nexport const selectUserName = (state) => \n  state.user.currentUser?.name || '游客';\nexport const selectUserAvatar = (state) => \n  state.user.currentUser?.avatar || '';\n\nexport default userSlice.reducer;\n",
+      "encoding": "utf8",
+      "condition": "!context.techStack.language?.includes('typescript') && !context.hasFile('src/store/slices/userSlice.js')"
+    },
+    {
+      "path": "src/store/slices/appSlice.ts",
+      "content": "import { createSlice, PayloadAction } from '@reduxjs/toolkit';\n\ntype Theme = 'light' | 'dark' | 'auto';\ntype Language = 'zh-CN' | 'en-US';\n\ninterface AppState {\n  theme: Theme;\n  language: Language;\n  sidebarCollapsed: boolean;\n  loading: boolean;\n}\n\nconst initialState: AppState = {\n  theme: 'light',\n  language: 'zh-CN',\n  sidebarCollapsed: false,\n  loading: false,\n};\n\nconst appSlice = createSlice({\n  name: 'app',\n  initialState,\n  reducers: {\n    setTheme: (state, action: PayloadAction<Theme>) => {\n      state.theme = action.payload;\n      // 应用主题到 document\n      document.documentElement.setAttribute('data-theme', action.payload);\n    },\n    toggleTheme: (state) => {\n      const newTheme = state.theme === 'light' ? 'dark' : 'light';\n      state.theme = newTheme;\n      document.documentElement.setAttribute('data-theme', newTheme);\n    },\n    setLanguage: (state, action: PayloadAction<Language>) => {\n      state.language = action.payload;\n      // 应用语言到 document\n      document.documentElement.setAttribute('lang', action.payload);\n    },\n    toggleSidebar: (state) => {\n      state.sidebarCollapsed = !state.sidebarCollapsed;\n    },\n    setLoading: (state, action: PayloadAction<boolean>) => {\n      state.loading = action.payload;\n    },\n    initializeApp: (state) => {\n      // 初始化应用设置\n      document.documentElement.setAttribute('data-theme', state.theme);\n      document.documentElement.setAttribute('lang', state.language);\n    },\n  },\n});\n\nexport const {\n  setTheme,\n  toggleTheme,\n  setLanguage,\n  toggleSidebar,\n  setLoading,\n  initializeApp,\n} = appSlice.actions;\n\n// Selectors\nexport const selectTheme = (state: { app: AppState }) => state.app.theme;\nexport const selectLanguage = (state: { app: AppState }) => state.app.language;\nexport const selectSidebarCollapsed = (state: { app: AppState }) => state.app.sidebarCollapsed;\nexport const selectAppLoading = (state: { app: AppState }) => state.app.loading;\nexport const selectIsDarkMode = (state: { app: AppState }) => {\n  if (state.app.theme === 'auto') {\n    return window.matchMedia('(prefers-color-scheme: dark)').matches;\n  }\n  return state.app.theme === 'dark';\n};\nexport const selectIsZhCN = (state: { app: AppState }) => state.app.language === 'zh-CN';\n\nexport default appSlice.reducer;\n",
+      "encoding": "utf8",
+      "condition": "context.techStack.language?.includes('typescript') && !context.hasFile('src/store/slices/appSlice.ts')"
+    },
+    {
+      "path": "src/store/slices/appSlice.js",
+      "content": "import { createSlice } from '@reduxjs/toolkit';\n\nconst initialState = {\n  theme: 'light',\n  language: 'zh-CN',\n  sidebarCollapsed: false,\n  loading: false,\n};\n\nconst appSlice = createSlice({\n  name: 'app',\n  initialState,\n  reducers: {\n    setTheme: (state, action) => {\n      state.theme = action.payload;\n      // 应用主题到 document\n      document.documentElement.setAttribute('data-theme', action.payload);\n    },\n    toggleTheme: (state) => {\n      const newTheme = state.theme === 'light' ? 'dark' : 'light';\n      state.theme = newTheme;\n      document.documentElement.setAttribute('data-theme', newTheme);\n    },\n    setLanguage: (state, action) => {\n      state.language = action.payload;\n      // 应用语言到 document\n      document.documentElement.setAttribute('lang', action.payload);\n    },\n    toggleSidebar: (state) => {\n      state.sidebarCollapsed = !state.sidebarCollapsed;\n    },\n    setLoading: (state, action) => {\n      state.loading = action.payload;\n    },\n    initializeApp: (state) => {\n      // 初始化应用设置\n      document.documentElement.setAttribute('data-theme', state.theme);\n      document.documentElement.setAttribute('lang', state.language);\n    },\n  },\n});\n\nexport const {\n  setTheme,\n  toggleTheme,\n  setLanguage,\n  toggleSidebar,\n  setLoading,\n  initializeApp,\n} = appSlice.actions;\n\n// Selectors\nexport const selectTheme = (state) => state.app.theme;\nexport const selectLanguage = (state) => state.app.language;\nexport const selectSidebarCollapsed = (state) => state.app.sidebarCollapsed;\nexport const selectAppLoading = (state) => state.app.loading;\nexport const selectIsDarkMode = (state) => {\n  if (state.app.theme === 'auto') {\n    return window.matchMedia('(prefers-color-scheme: dark)').matches;\n  }\n  return state.app.theme === 'dark';\n};\nexport const selectIsZhCN = (state) => state.app.language === 'zh-CN';\n\nexport default appSlice.reducer;\n",
+      "encoding": "utf8",
+      "condition": "!context.techStack.language?.includes('typescript') && !context.hasFile('src/store/slices/appSlice.js')"
+    },
+    {
+      "path": "src/components/ReduxProvider.tsx",
+      "content": "import React from 'react';\nimport { Provider } from 'react-redux';\n{{#if (includes extraTools 'persistence')}}\nimport { PersistGate } from 'redux-persist/integration/react';\nimport { store, persistor } from '../store';\n{{else}}\nimport { store } from '../store';\n{{/if}}\n\ninterface ReduxProviderProps {\n  children: React.ReactNode;\n}\n\nconst ReduxProvider: React.FC<ReduxProviderProps> = ({ children }) => {\n  return (\n    <Provider store={store}>\n{{#if (includes extraTools 'persistence')}}\n      <PersistGate loading={<div>Loading...</div>} persistor={persistor}>\n        {children}\n      </PersistGate>\n{{else}}\n      {children}\n{{/if}}\n    </Provider>\n  );\n};\n\nexport default ReduxProvider;\n",
+      "encoding": "utf8",
+      "condition": "context.techStack.language?.includes('typescript') && !context.hasFile('src/components/ReduxProvider.tsx')"
+    },
+    {
+      "path": "src/components/ReduxProvider.jsx",
+      "content": "import React from 'react';\nimport { Provider } from 'react-redux';\n{{#if (includes extraTools 'persistence')}}\nimport { PersistGate } from 'redux-persist/integration/react';\nimport { store, persistor } from '../store';\n{{else}}\nimport { store } from '../store';\n{{/if}}\n\nconst ReduxProvider = ({ children }) => {\n  return (\n    <Provider store={store}>\n{{#if (includes extraTools 'persistence')}}\n      <PersistGate loading={<div>Loading...</div>} persistor={persistor}>\n        {children}\n      </PersistGate>\n{{else}}\n      {children}\n{{/if}}\n    </Provider>\n  );\n};\n\nexport default ReduxProvider;\n",
+      "encoding": "utf8",
+      "condition": "!context.techStack.language?.includes('typescript') && !context.hasFile('src/components/ReduxProvider.jsx')"
+    }
+  ],
+  "integration": {
+    "react": {
+      "providers": [
+        {
+          "name": "ReduxProvider",
+          "import": "import ReduxProvider from '@/components/ReduxProvider';",
+          "wrapper": "<ReduxProvider>{children}</ReduxProvider>"
+        }
+      ]
+    },
+    "typescript": {
+      "compilerOptions": {
+        "types": ["@reduxjs/toolkit"]
+      }
+    }
+  },
+  "defaultConfig": {
+    "redux": {
+      "devTools": true,
+      "immutableCheck": true,
+      "serializableCheck": true
+    }
+  },
+  "hooks": {
+    "afterActivation": "console.log('Redux Toolkit plugin activated successfully')"
+  }
+}
