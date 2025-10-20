@@ -1,5 +1,5 @@
-import type { TechStack } from '../types/index.js';
-import { getFixedTemplates } from './matcher.js';
+import type { TechStack } from '../types/index';
+
 
 /**
  * 智能意图识别器

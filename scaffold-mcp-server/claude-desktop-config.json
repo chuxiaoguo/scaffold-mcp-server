@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "scaffold-generator": {
+      "command": "node",
+      "args": ["/Users/zcg/Desktop/scafford-mcp-server-AI/trae/scaffold-mcp-server/dist/index.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

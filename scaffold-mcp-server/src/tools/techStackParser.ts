@@ -7,14 +7,17 @@ export function parseTechStack(techStack: string | string[]): TechStack {
   const result: TechStack = {};
   
   if (typeof techStack === 'string') {
-    // 解析字符串格式，如 "vue3+ts+vite"
-    const parts = techStack.toLowerCase().split(/[+\-_]/);
+    // 解析字符串格式，如 "vue3+ts+vite" 或 "react vite typescript"
+    const parts = techStack.toLowerCase().split(/[+\-_\s]+/).filter(part => part.trim());
     
     parts.forEach(part => {
       switch (part) {
         case 'vue3':
         case 'vue':
           result.framework = 'vue3';
+          break;
+        case 'vue2':
+          result.framework = 'vue2';
           break;
         case 'react':
           result.framework = 'react';
@@ -64,6 +67,9 @@ export function parseTechStack(techStack: string | string[]): TechStack {
         case 'element':
         case 'element-plus':
           result.ui = 'element-plus';
+          break;
+        case 'element-ui':
+          result.ui = 'element-ui';
           break;
         case 'antd':
         case 'ant-design':

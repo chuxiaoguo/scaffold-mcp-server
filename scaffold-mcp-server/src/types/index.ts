@@ -13,7 +13,6 @@ export interface TechStack {
 
 export interface GenerateOptions {
   force?: boolean;
-  install?: boolean;
   dryRun?: boolean;
   testRunner?: 'jest' | 'vitest';
 }

@@ -1,6 +1,8 @@
 import type { TechStack, TemplateConfig, TemplatesConfigIndex, UnifiedTemplateInfo } from '../types/index.js';
 import { IntentRecognizer } from './intentRecognizer.js';
 import { getTemplateConfigManager } from './config/templateConfigManager.js';
+import { SmartMatcher, type MatchResult, type SmartMatchOptions } from './matcher/SmartMatcher.js';
+import { type TemplateEntry } from './matcher/ScoreCalculator.js';
 
 // 固定模板配置（通过模板配置索引驱动）
 let TEMPLATES_INDEX_CACHE: TemplatesConfigIndex | null = null;
@@ -8,9 +10,9 @@ let TEMPLATES_INDEX_CACHE: TemplatesConfigIndex | null = null;
 async function loadTemplatesIndex(): Promise<TemplatesConfigIndex | null> {
   if (TEMPLATES_INDEX_CACHE) return TEMPLATES_INDEX_CACHE;
   const manager = getTemplateConfigManager();
-  const idx = await manager.getTemplatesIndex();
-  TEMPLATES_INDEX_CACHE = idx;
-  return idx;
+  const result = await manager.getTemplatesIndex();
+  TEMPLATES_INDEX_CACHE = result.config;
+  return result.config;
 }
 
 // 技术栈别名映射
@@ -112,37 +114,38 @@ export async function smartMatchFixedTemplate(input: string | string[]): Promise
     suggestions?: string[];
   };
 }> {
-  const parsedStack = parseTechStack(input);
-  const techTokens = extractTechnologies(Array.isArray(input) ? input.join(' ') : String(input));
-  const best = await computeBestMatch(parsedStack, techTokens);
+  // 优先使用新的智能匹配器
+  const newMatchResult = await smartMatchWithNewMatcher(input);
+  if (newMatchResult.template) {
+    const analysis: {
+        canUseFixedTemplate: boolean;
+        recommendedTemplate?: string;
+        reason: string;
+        suggestions?: string[];
+      } = {
+        canUseFixedTemplate: newMatchResult.analysis.canUseFixedTemplate,
+        reason: newMatchResult.analysis.reason
+      };
 
-  if (!best) {
-    const old = IntentRecognizer.analyzeTechStack(parsedStack);
-    return {
-      template: old.recommendedTemplate ? { name: old.recommendedTemplate, description: old.recommendedTemplate, techStack: {}, aliases: [] } as unknown as TemplateConfig : null,
-      analysis: old
-    };
+      if (newMatchResult.analysis.recommendedTemplate) {
+        analysis.recommendedTemplate = newMatchResult.analysis.recommendedTemplate;
+      }
+      if (newMatchResult.analysis.suggestions) {
+        analysis.suggestions = newMatchResult.analysis.suggestions;
+      }
+
+      return {
+        template: newMatchResult.template,
+        analysis
+      };
   }
 
-  const tmpl: TemplateConfig = {
-    name: best.entry.name,
-    description: best.entry.description || best.entry.name,
-    techStack: {
-      framework: (best.entry.matching.core.framework || [])[0] as any,
-      builder: (best.entry.matching.core.builder || [])[0] as any,
-      language: (best.entry.matching.core.language || [])[0] as any
-    },
-    aliases: []
-  };
-
+  // 回退到原有逻辑
+  const parsedStack = parseTechStack(input);
+  const old = IntentRecognizer.analyzeTechStack(parsedStack);
   return {
-    template: tmpl,
-    analysis: {
-      canUseFixedTemplate: true,
-      recommendedTemplate: best.entry.name,
-      reason: `匹配到配置模板 ${best.entry.name}，得分 ${best.score}`,
-      suggestions: [`优先使用固定模板以获得更稳定的脚手架`]
-    }
+    template: old.recommendedTemplate ? { name: old.recommendedTemplate, description: old.recommendedTemplate, techStack: {}, aliases: [] } as unknown as TemplateConfig : null,
+    analysis: old
   };
 }
 
@@ -282,56 +285,91 @@ function isTechStackMatch(parsed: TechStack, template: TechStack): boolean {
 /**
  * 使用模板配置索引计算最优匹配
  */
-async function computeBestMatch(parsedStack: TechStack, techTokens: string[]): Promise<{ entry: UnifiedTemplateInfo; score: number } | null> {
+/**
+ * 使用新的智能匹配器进行模板匹配
+ */
+export async function smartMatchWithNewMatcher(input: string | string[]): Promise<{
+  template: TemplateConfig | null;
+  analysis: {
+    canUseFixedTemplate: boolean;
+    recommendedTemplate?: string;
+    reason: string;
+    suggestions?: string[];
+    matchType?: 'direct' | 'smart' | 'fallback';
+    confidence?: number;
+  };
+}> {
+  const parsedStack = parseTechStack(input);
+  const userInput = Array.isArray(input) ? input.join(' ') : String(input);
+  
+  // 获取模板索引并转换为TemplateEntry格式
   const index = await loadTemplatesIndex();
-  if (!index) return null;
-
-  let best: { entry: UnifiedTemplateInfo; score: number } | null = null;
-
-  for (const entry of Object.values(index.templates)) {
-    const conflicts = entry.matching.conflicts || [];
-    const hasConflict = conflicts.some(c => techTokens.includes(c.toLowerCase()));
-    if (hasConflict) continue;
-
-    let score = 0;
-    // 核心字段评分：存在于用户输入且命中配置的，每个+100
-    const required = entry.matching.required || ['framework'];
-    const core = entry.matching.core || {};
-
-    // 框架必须命中
-    const frameworkOk = parsedStack.framework && (core.framework || []).includes(parsedStack.framework);
-    if (!frameworkOk) continue;
-    if (parsedStack.framework) score += 100;
-
-    // 构建工具（如用户提供则必须命中）
-    if (parsedStack.builder) {
-      const builderOk = (core.builder || []).includes(parsedStack.builder);
-      if (!builderOk) continue;
-      score += 100;
-    }
-
-    // 语言（如果用户提供则参与评分，不作为硬性过滤）
-    if (parsedStack.language) {
-      const langOk = (core.language || []).includes(parsedStack.language);
-      if (langOk) score += 100;
-    }
-
-    // 可选项评分：每命中一项+10
-    const optional = entry.matching.optional || {};
-    for (const [key, values] of Object.entries(optional)) {
-      const field = key as keyof TechStack;
-      const val = parsedStack[field];
-      if (val && (values || []).includes(val)) {
-        score += 10;
+  if (!index) {
+    return {
+      template: null,
+      analysis: {
+        canUseFixedTemplate: false,
+        reason: '无法加载模板配置',
+        suggestions: ['请检查模板配置文件是否存在']
       }
-    }
-
-    if (!best || score > best.score || (score === best.score && (entry.priority || 0) > (best.entry.priority || 0))) {
-      best = { entry, score };
-    }
+    };
   }
 
-  return best;
+  // 转换模板格式
+  const templates: TemplateEntry[] = Object.values(index.templates).map(entry => ({
+    name: entry.name,
+    description: entry.description || entry.name,
+    keywords: (entry as any).keywords || [], // 临时类型断言
+    matching: entry.matching,
+    priority: entry.priority || 0
+  }));
+
+  // 使用新的智能匹配器
+  const matchResult = SmartMatcher.matchTemplate(parsedStack, userInput, templates, {
+    enableKeywordMatch: true,
+    minScore: 30,
+    fallbackToDefault: true,
+    defaultTemplate: 'vue3-vite-typescript'
+  });
+
+  if (!matchResult) {
+    return {
+      template: null,
+      analysis: {
+        canUseFixedTemplate: false,
+        reason: '未找到匹配的模板',
+        suggestions: ['尝试使用更具体的技术栈描述', '检查输入的技术栈是否支持']
+      }
+    };
+  }
+
+  // 转换为TemplateConfig格式
+  const template: TemplateConfig = {
+    name: matchResult.template.name,
+    description: matchResult.template.description,
+    techStack: {
+      framework: (matchResult.template.matching.core?.framework || [])[0] as any,
+      builder: (matchResult.template.matching.core?.builder || [])[0] as any,
+      language: (matchResult.template.matching.core?.language || [])[0] as any
+    },
+    aliases: []
+  };
+
+  return {
+    template,
+    analysis: {
+      canUseFixedTemplate: true,
+      recommendedTemplate: matchResult.template.name,
+      reason: `使用${matchResult.matchType === 'direct' ? '直接关键词' : matchResult.matchType === 'smart' ? '智能积分' : '默认回退'}匹配到模板 ${matchResult.template.name}，总分 ${matchResult.score.totalScore}，置信度 ${(matchResult.confidence * 100).toFixed(1)}%`,
+      suggestions: [
+        matchResult.matchType === 'fallback' 
+          ? '建议提供更具体的技术栈信息以获得更准确的匹配'
+          : '匹配度较高，建议使用此模板'
+      ],
+      matchType: matchResult.matchType,
+      confidence: matchResult.confidence
+    }
+  };
 }
 
 // 覆盖 smartMatchFixedTemplate 的实现，利用 computeBestMatch

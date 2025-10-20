@@ -1,0 +1,13 @@
+{
+  "name": "Scaffold Generator",
+  "command": "node",
+  "args": ["/Users/zcg/Desktop/scafford-mcp-server-AI/trae/scaffold-mcp-server/dist/index.js"],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "description": "Frontend project scaffold generator with multiple templates",
+  "capabilities": [
+    "generateScaffold"
+  ],
+  "version": "1.0.0"
+}

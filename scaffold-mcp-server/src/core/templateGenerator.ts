@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { spawn } from 'child_process';
-import type { TechStack } from '../types/index.js';
+import type { TechStack } from '../types/index';
 
 export interface TemplateConfig {
   name: string;
@@ -21,23 +21,6 @@ export const FIXED_TEMPLATES: Record<string, TemplateConfig> = {
     command: 'npm',
     args: ['create', 'vite@latest', '.', '--', '--template', 'vue-ts'],
     postProcess: async (projectPath: string) => {
-      // 安装额外依赖
-      await installDependencies(projectPath, [
-        'element-plus',
-        '@element-plus/icons-vue',
-        'pinia',
-        'vue-router',
-        'tailwindcss',
-        'autoprefixer',
-        'postcss'
-      ]);
-      
-      // 安装开发依赖
-      await installDevDependencies(projectPath, [
-        'unplugin-auto-import',
-        'unplugin-vue-components'
-      ]);
-      
       // 配置 Tailwind CSS
       await setupTailwindCSS(projectPath);
       
@@ -56,23 +39,6 @@ export const FIXED_TEMPLATES: Record<string, TemplateConfig> = {
     command: 'npm',
     args: ['create', 'electron-vite@latest', '.', '--', '--template', 'vue-ts'],
     postProcess: async (projectPath: string) => {
-      // 安装额外依赖
-      await installDependencies(projectPath, [
-        'element-plus',
-        '@element-plus/icons-vue',
-        'pinia',
-        'vue-router',
-        'tailwindcss',
-        'autoprefixer',
-        'postcss'
-      ]);
-      
-      // 安装开发依赖
-      await installDevDependencies(projectPath, [
-        'unplugin-auto-import',
-        'unplugin-vue-components'
-      ]);
-      
       // 配置 Tailwind CSS
       await setupTailwindCSS(projectPath);
       
@@ -91,20 +57,6 @@ export const FIXED_TEMPLATES: Record<string, TemplateConfig> = {
     command: 'npx',
     args: ['create-react-app@latest', '.', '--template', 'typescript'],
     postProcess: async (projectPath: string) => {
-      // 安装 Antd 和 Less
-      await installDependencies(projectPath, [
-        'antd',
-        '@ant-design/icons'
-      ]);
-      
-      // 安装开发依赖
-      await installDevDependencies(projectPath, [
-        'less',
-        'less-loader',
-        '@craco/craco',
-        'craco-less'
-      ]);
-      
       // 配置 Craco 支持 Less 和 Antd
       await setupCracoConfig(projectPath);
       
@@ -125,10 +77,6 @@ export const FIXED_TEMPLATES: Record<string, TemplateConfig> = {
     postProcess: async (projectPath: string) => {
       // UmiJS 通常会在交互式创建过程中配置 Antd
       // 这里可以添加额外的配置
-      await installDependencies(projectPath, [
-        'antd',
-        '@ant-design/icons'
-      ]);
     }
   }
 };
@@ -360,49 +308,7 @@ export class TemplateGenerator {
   }
 }
 
-/**
- * 安装依赖
- */
-async function installDependencies(projectPath: string, packages: string[]): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('pnpm', ['add', ...packages], {
-      cwd: projectPath,
-      stdio: 'inherit'
-    });
-    
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`依赖安装失败: ${packages.join(', ')}`));
-      }
-    });
-    
-    child.on('error', reject);
-  });
-}
 
-/**
- * 安装开发依赖
- */
-async function installDevDependencies(projectPath: string, packages: string[]): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('pnpm', ['add', '-D', ...packages], {
-      cwd: projectPath,
-      stdio: 'inherit'
-    });
-    
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`开发依赖安装失败: ${packages.join(', ')}`));
-      }
-    });
-    
-    child.on('error', reject);
-  });
-}
 
 /**
  * 配置 Tailwind CSS

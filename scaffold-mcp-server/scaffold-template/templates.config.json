@@ -1,11 +1,22 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2025-10-15T00:00:00Z",
+  "version": "2.0.0",
+  "lastUpdated": "2025-01-17T00:00:00Z",
+  "remoteConfig": {
+    "enabled": true,
+    "repository": {
+      "url": "https://github.com/chuxiaoguo/scaffold-mcp-server",
+      "branch": "mac",
+      "targetFolder": "scaffold-mcp-server/scaffold-template/templates.config.json"
+    },
+    "checkInterval": "daily",
+    "fallbackToLocal": true
+  },
   "templates": {
     "react-webpack-typescript": {
       "name": "react-webpack-typescript",
       "version": "1.0.0",
       "description": "React + Webpack + TypeScript + Ant Design 项目模板",
+      "keywords": ["react项目", "webpack构建", "typescript开发", "企业级应用", "管理后台", "中后台系统"],
       "matching": {
         "required": ["framework"],
         "core": {
@@ -28,6 +39,7 @@
       "name": "vue3-vite-typescript",
       "version": "1.0.0",
       "description": "Vue3 + Vite + TypeScript + Element Plus 项目模板",
+      "keywords": ["vue3项目", "vite构建", "typescript开发", "现代化应用", "快速开发", "组件化"],
       "matching": {
         "required": ["framework"],
         "core": {
@@ -50,6 +62,7 @@
       "name": "electron-vite-vue3",
       "version": "1.0.0",
       "description": "Electron + Vite + Vue3 + TypeScript 项目模板",
+      "keywords": ["electron应用", "桌面应用", "跨平台", "vue3开发", "客户端应用"],
       "matching": {
         "required": ["framework"],
         "core": {
@@ -72,6 +85,7 @@
       "name": "umijs",
       "version": "1.0.0",
       "description": "UmiJS + React + TypeScript + Ant Design 项目模板",
+      "keywords": ["umi框架", "企业级框架", "约定式路由", "插件化", "开箱即用"],
       "matching": {
         "required": ["framework"],
         "core": {

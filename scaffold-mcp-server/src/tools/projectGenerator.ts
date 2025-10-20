@@ -13,7 +13,6 @@ import {
 } from "./templateDownloader.js";
 import {
   createProjectFiles,
-  installDependencies,
   generateDirectoryTree,
   generateFileSummary,
 } from "./fileOperations.js";
@@ -535,6 +534,91 @@ const title = ref('${projectName}')
       };
       break;
 
+    case "vue2":
+      logs.push(`   - 生成 Vue 2 项目结构`);
+      console.log(`   - 生成 Vue 2 项目结构`);
+
+      // 主入口文件
+      files["src/main.js"] = `import Vue from 'vue'
+import App from './App.vue'
+
+Vue.config.productionTip = false
+
+new Vue({
+  render: h => h(App),
+}).$mount('#app')`;
+
+      // App 组件
+      files["src/App.vue"] = `<template>
+  <div id="app">
+    <h1>{{ title }}</h1>
+    <p>欢迎使用 Vue 2 项目！</p>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'App',
+  data() {
+    return {
+      title: '${projectName}'
+    }
+  }
+}
+</script>
+
+<style scoped>
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+}
+</style>`;
+
+      // HTML 模板
+      files["index.html"] = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${projectName}</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/src/main.js"></script>
+</body>
+</html>`;
+
+      // 依赖配置
+      packageJson.dependencies["vue"] = "^2.7.14";
+      if (techStack.builder === "webpack") {
+        packageJson.devDependencies["webpack"] = "^5.0.0";
+        packageJson.devDependencies["webpack-cli"] = "^5.0.0";
+        packageJson.devDependencies["webpack-dev-server"] = "^4.0.0";
+        packageJson.devDependencies["vue-loader"] = "^17.0.0";
+        packageJson.devDependencies["vue-template-compiler"] = "^2.7.14";
+        packageJson.devDependencies["html-webpack-plugin"] = "^5.0.0";
+        packageJson.devDependencies["css-loader"] = "^6.0.0";
+        packageJson.devDependencies["vue-style-loader"] = "^4.1.3";
+        
+        packageJson.scripts = {
+          dev: "webpack serve --mode development",
+          build: "webpack --mode production",
+        };
+      } else {
+        // 默认使用 Vite (Vue 2.7+ 支持)
+        packageJson.devDependencies["@vitejs/plugin-vue2"] = "^2.0.0";
+        packageJson.devDependencies["vite"] = "^4.0.0";
+        
+        packageJson.scripts = {
+          dev: "vite",
+          build: "vite build",
+          preview: "vite preview",
+        };
+      }
+      break;
+
     case "react":
       console.log(`   - 生成 React 项目结构`);
 
@@ -650,6 +734,20 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
+  server: {
+    port: 3000,
+    open: true
+  },
+  build: {
+    outDir: 'dist'
+  }
+})`;
+    } else if (techStack.framework === "vue2") {
+      viteConfig = `import { defineConfig } from 'vite'
+import { createVuePlugin } from '@vitejs/plugin-vue2'
+
+export default defineConfig({
+  plugins: [createVuePlugin()],
   server: {
     port: 3000,
     open: true
@@ -811,7 +909,6 @@ export async function generateProject(
   options: {
     dryRun?: boolean;
     force?: boolean;
-    install?: boolean;
   } = {}
 ): Promise<{
   success: boolean;
@@ -987,26 +1084,18 @@ ${dependencyList}`,
     logs.push(`✅ package.json 创建成功`);
     console.log(`✅ 创建 package.json`);
 
-    // 11. 安装依赖
-    if (options.install !== false) {
-      logs.push(`📦 安装依赖...`);
-      await installDependencies(projectPath, options.install, logs);
-    } else {
-      logs.push(`⏭️ 跳过依赖安装`);
-    }
-
-    // 12. 生成项目摘要
+    // 11. 生成项目摘要
     logs.push(`📊 生成项目摘要...`);
     const directoryTree = await generateDirectoryTree(projectPath);
     const fileSummary = await generateFileSummary(projectPath);
     logs.push(`   - 目录树生成完成`);
     logs.push(`   - 文件摘要生成完成`);
 
-    // 13. 统计最终的实际文件数量（安装依赖后可能会有变化）
+    // 12. 统计最终的实际文件数量
     logs.push(`📊 统计最终文件数量...`);
     const fs = await import("fs/promises");
 
-    async function countFinalFiles(dirPath: string): Promise<number> {
+    const countFinalFiles = async (dirPath: string): Promise<number> => {
       let count = 0;
       try {
         const entries = await fs.readdir(dirPath, { withFileTypes: true });
@@ -1023,7 +1112,7 @@ ${dependencyList}`,
         // 忽略无法访问的目录
       }
       return count;
-    }
+    };
 
     const finalFileCount = await countFinalFiles(projectPath);
     logs.push(`   - 最终文件数量: ${finalFileCount}`);

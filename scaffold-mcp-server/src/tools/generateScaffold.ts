@@ -2,8 +2,11 @@ import type {
   GenerateScaffoldParams,
   GenerateResult,
   TechStack,
-} from "../types/index.js";
-import { smartMatchFixedTemplate } from "../core/matcher.js";
+} from "../types/index";
+import { smartMatchFixedTemplate, parseTechStack } from "../core/matcher.js";
+import { SmartMatcher, type MatchResult } from "../core/matcher/SmartMatcher.js";
+import { getTemplateManager } from "../core/templateManager/index.js";
+import { getTemplateConfigManager } from "../core/config/templateConfigManager.js";
 import { NonFixedBuilder } from "../core/nonFixedBuilder/index.js";
 import { ToolInjectorManager } from "../core/injectors/index.js";
 import { generateProject } from "./projectGenerator.js";
@@ -41,13 +44,11 @@ async function countAllFiles(dirPath: string): Promise<number> {
 /**
  * 生成脚手架项目的主函数
  *
- * 这是一个重构后的版本，将原有的复杂逻辑拆分到了多个专门的模块中：
- * - techStackParser.ts: 技术栈解析相关功能
- * - templateDownloader.ts: 模板下载相关功能
- * - fileOperations.ts: 文件操作相关功能
- * - projectGenerator.ts: 项目生成相关功能
- *
- * 本文件现在只负责主要的协调逻辑，调用各个模块完成具体任务。
+ * 这是一个重构后的版本，集成了新的模板管理系统：
+ * - 自动检查和更新远程模板
+ * - 使用智能匹配器进行模板选择
+ * - 支持关键词直接匹配和积分计算匹配
+ * - 提供更好的错误处理和日志记录
  */
 export async function generateScaffold(
   params: GenerateScaffoldParams
@@ -59,6 +60,22 @@ export async function generateScaffold(
     processLogs.push(`📋 原始参数: ${JSON.stringify(params, null, 2)}`);
     console.log(`🚀 开始生成脚手架项目...`);
     console.log(`📋 原始参数:`, JSON.stringify(params, null, 2));
+
+    // 0. 更新模板（如果需要）
+    processLogs.push(`🔄 检查模板更新...`);
+    const templateManager = getTemplateManager();
+    
+    try {
+      const updateResult = await templateManager.updateTemplatesIfNeeded();
+      if (updateResult.updated) {
+        processLogs.push(`✅ 模板已更新`);
+      } else {
+        processLogs.push(`ℹ️ 模板已是最新版本`);
+      }
+    } catch (updateError: any) {
+      processLogs.push(`⚠️ 模板更新失败，使用本地模板: ${updateError.message}`);
+      console.warn('模板更新失败，使用本地模板:', updateError);
+    }
 
     // 1. 智能路径解析
     processLogs.push(`📁 开始智能路径解析...`);
@@ -78,6 +95,7 @@ export async function generateScaffold(
     // 2. 路径验证
     processLogs.push(`🔍 验证项目路径...`);
     const validation = validateProjectPath(projectPath, params.options?.force || false);
+
     if (!validation.valid) {
       processLogs.push(`❌ 路径验证失败: ${validation.message}`);
       if (validation.suggestions) {
@@ -98,7 +116,80 @@ export async function generateScaffold(
     }
     processLogs.push(`✅ 路径验证通过`);
 
-    // 3. 使用重构后的项目生成器
+    // 3. 智能模板匹配
+    processLogs.push(`🧠 开始智能模板匹配...`);
+    
+    // 解析技术栈
+    const techStack = parseTechStack(params.tech_stack);
+    processLogs.push(`📋 解析的技术栈: ${JSON.stringify(techStack)}`);
+    
+    // 获取用户输入字符串（用于关键词匹配）
+    const userInput = Array.isArray(params.tech_stack) 
+      ? params.tech_stack.join(' ') 
+      : params.tech_stack;
+    
+    // 获取模板配置
+    const templateConfigManager = getTemplateConfigManager();
+    const templateConfigResult = await templateConfigManager.getTemplatesIndex();
+    const templateConfig = templateConfigResult.config;
+    const configLogs = templateConfigResult.logs;
+    
+    // 将配置加载日志添加到processLogs中
+    processLogs.push(`📚 模板配置加载过程:`);
+    configLogs.forEach(log => {
+      processLogs.push(`   ${log}`);
+    });
+    
+    const templatesObj = templateConfig?.templates || {};
+    
+    // 将templates对象转换为数组
+    const templatesArray = Object.entries(templatesObj).map(([id, template]: [string, any]) => ({
+      id,
+      ...template
+    }));
+    
+    processLogs.push(`📚 可用模板数量: ${templatesArray.length}`);
+    
+    // 转换为TemplateEntry数组
+    const templates = templatesArray.map((entry: any) => ({
+      id: entry.id,
+      name: entry.name,
+      description: entry.description || entry.name,
+      keywords: entry.keywords || [],
+      matching: entry.matching || {},
+      priority: entry.priority || 0,
+      config: entry
+    }));
+    
+    // 使用智能匹配器
+    const matchResult = SmartMatcher.matchTemplate(
+      techStack,
+      userInput,
+      templates,
+      {
+        enableKeywordMatch: true,
+        minScore: 30,
+        fallbackToDefault: true,
+        defaultTemplate: 'vue3-vite-typescript'
+      }
+    );
+
+    if (matchResult) {
+      processLogs.push(`🎯 匹配成功!`);
+      processLogs.push(`   - 模板名称: ${matchResult.template.name}`);
+      processLogs.push(`   - 匹配类型: ${matchResult.matchType}`);
+      processLogs.push(`   - 置信度: ${(matchResult.confidence * 100).toFixed(1)}%`);
+      processLogs.push(`   - 总分: ${matchResult.score.totalScore.toFixed(1)}`);
+      processLogs.push(`   - 详细分数: 核心=${matchResult.score.coreScore}, 可选=${matchResult.score.optionalScore}, 关键词=${matchResult.score.keywordScore}, 优先级=${matchResult.score.priorityBonus}`);
+      
+      // 使用匹配到的模板信息更新技术栈
+      const matchedTemplate = matchResult.template;
+      processLogs.push(`🔧 使用模板: ${matchedTemplate.name} (${matchedTemplate.description})`);
+    } else {
+      processLogs.push(`⚠️ 未找到合适的模板，将使用非固定模板生成`);
+    }
+
+    // 4. 使用重构后的项目生成器
     processLogs.push(`🔧 调用项目生成器...`);
     
     // 计算相对于项目路径的输出目录
@@ -112,7 +203,6 @@ export async function generateScaffold(
       {
         dryRun: params.options?.dryRun || false,
         force: params.options?.force || false,
-        install: params.options?.install !== false,
       }
     );
 
@@ -164,7 +254,9 @@ export async function generateScaffold(
       files: Array.isArray(result.fileSummary)
         ? result.fileSummary.map((f) => ({ path: f, size: 0, type: "file" }))
         : [],
-      templateSource: "智能路径解析生成器",
+      templateSource: matchResult 
+        ? `智能匹配模板: ${matchResult.template.name} (${matchResult.matchType}匹配, 置信度${(matchResult.confidence * 100).toFixed(1)}%)`
+        : "非固定模板生成器",
       processLogs,
     };
 
@@ -202,6 +294,8 @@ export async function generateScaffold(
 }
 
 /**
- * 导出主函数作为默认导出
+ * 生成脚手架项目的主函数
+ * @param params 生成参数
+ * @returns 生成结果
  */
 export default generateScaffold;

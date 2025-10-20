@@ -31,6 +31,8 @@ export class WebpackBuilder implements IBuilder {
       this.setupReact(techStack, files, dependencies, devDependencies);
     } else if (framework === 'vue3') {
       this.setupVue3(techStack, files, dependencies, devDependencies);
+    } else if (framework === 'vue2') {
+      this.setupVue2(techStack, files, dependencies, devDependencies);
     }
 
     // 基础脚本
@@ -54,6 +56,10 @@ export class WebpackBuilder implements IBuilder {
       files['src/main.ts'] = this.generateVue3Main(techStack);
       files['src/App.vue'] = this.generateVue3App(techStack);
       files['public/index.html'] = this.generateVue3Html(projectName);
+    } else if (framework === 'vue2') {
+      files['src/main.js'] = this.generateVue2Main(techStack);
+      files['src/App.vue'] = this.generateVue2App(techStack);
+      files['public/index.html'] = this.generateVue2Html(projectName);
     }
 
     return { files, dependencies, devDependencies, scripts };
@@ -79,6 +85,29 @@ export class WebpackBuilder implements IBuilder {
 
     if (techStack.ui === 'antd') {
       dependencies['antd'] = '^5.12.0';
+    }
+
+    if (techStack.style === 'less') {
+      devDependencies['less'] = '^4.2.0';
+      devDependencies['less-loader'] = '^11.1.0';
+    }
+  }
+
+  private setupVue2(techStack: TechStack, files: Record<string, string>, dependencies: Record<string, string>, devDependencies: Record<string, string>): void {
+    dependencies['vue'] = '^2.7.16';
+    devDependencies['vue-loader'] = '^15.11.1';
+    devDependencies['vue-template-compiler'] = '^2.7.16';
+
+    if (techStack.router === 'vue-router') {
+      dependencies['vue-router'] = '^3.6.5';
+    }
+
+    if (techStack.state === 'vuex') {
+      dependencies['vuex'] = '^3.6.2';
+    }
+
+    if (techStack.ui === 'element-ui') {
+      dependencies['element-ui'] = '^2.15.14';
     }
 
     if (techStack.style === 'less') {
@@ -114,10 +143,11 @@ export class WebpackBuilder implements IBuilder {
     const language = techStack.language || 'typescript';
     const isTypeScript = language === 'typescript';
 
-    const entry = framework === 'react' ? './src/index.tsx' : './src/main.ts';
+    const entry = framework === 'react' ? './src/index.tsx' : 
+                  framework === 'vue2' ? './src/main.js' : './src/main.ts';
     const extensions = isTypeScript ? ['.tsx', '.ts', '.js', '.jsx'] : ['.js', '.jsx'];
     
-    if (framework === 'vue3') {
+    if (framework === 'vue3' || framework === 'vue2') {
       extensions.unshift('.vue');
     }
 
@@ -152,7 +182,7 @@ export class WebpackBuilder implements IBuilder {
     }
 
     // Vue rules
-    if (framework === 'vue3') {
+    if (framework === 'vue3' || framework === 'vue2') {
       rules.push(`
       {
         test: /\\.vue$/,
@@ -178,12 +208,12 @@ export class WebpackBuilder implements IBuilder {
 
     const plugins = ["new HtmlWebpackPlugin({ template: './public/index.html' })"];
     
-    if (framework === 'vue3') {
+    if (framework === 'vue3' || framework === 'vue2') {
       plugins.unshift("new VueLoaderPlugin()");
     }
 
     return `const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');${framework === 'vue3' ? "\nconst { VueLoaderPlugin } = require('vue-loader');" : ''}
+const HtmlWebpackPlugin = require('html-webpack-plugin');${framework === 'vue3' || framework === 'vue2' ? "\nconst { VueLoaderPlugin } = require('vue-loader');" : ''}
 
 module.exports = {
   entry: '${entry}',
@@ -371,6 +401,91 @@ const app = createApp(App)
 ${appSetup.join('\n')}
 
 app.mount('#app')`;
+  }
+
+  private generateVue2Main(techStack: TechStack): string {
+    const imports = ["import Vue from 'vue'"];
+    const components = [];
+    const plugins = [];
+
+    imports.push("import App from './App.vue'");
+
+    if (techStack.router === 'vue-router') {
+      imports.push("import router from './router'");
+      plugins.push('router');
+    }
+
+    if (techStack.state === 'vuex') {
+      imports.push("import store from './store'");
+      plugins.push('store');
+    }
+
+    if (techStack.ui === 'element-ui') {
+      imports.push("import ElementUI from 'element-ui'");
+      imports.push("import 'element-ui/lib/theme-chalk/index.css'");
+      components.push('Vue.use(ElementUI)');
+    }
+
+    const pluginConfig = plugins.length > 0 ? `,\n  ${plugins.join(',\n  ')}` : '';
+
+    return `${imports.join('\n')}
+
+Vue.config.productionTip = false
+
+${components.join('\n')}
+
+new Vue({
+  el: '#app'${pluginConfig},
+  render: h => h(App)
+})`;
+  }
+
+  private generateVue2App(techStack: TechStack): string {
+    return `<template>
+  <div id="app">
+    <h1>Welcome to Vue 2</h1>
+    <p>This is a Vue 2 + Webpack + ${techStack.language || 'JavaScript'} project.</p>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'App',
+  data() {
+    return {
+      // Your data here
+    }
+  },
+  methods: {
+    // Your methods here
+  }
+}
+</script>
+
+<style scoped>
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+}
+</style>`;
+  }
+
+  private generateVue2Html(projectName: string): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${projectName}</title>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>`;
   }
 
   private generateVue3App(techStack: TechStack): string {

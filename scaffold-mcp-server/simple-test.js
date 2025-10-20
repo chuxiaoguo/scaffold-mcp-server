@@ -34,7 +34,7 @@ async function simpleTest() {
       name: '用户原始案例 - UmiJS项目',
       tech_stack: 'umijs',
       project_name: 'nima-test',
-      expectedFiles: ['package.json', '.umirc.ts', 'src/pages/index.tsx', 'README.md']
+      expectedFiles: ['package.json', 'src/pages/Home/index.tsx', 'README.md', 'tsconfig.json']
     },
     {
       name: 'React + Vite + TypeScript (动态生成)',
