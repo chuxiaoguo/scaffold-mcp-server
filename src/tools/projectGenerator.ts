@@ -893,6 +893,9 @@ Thumbs.db
 *.temp
 .cache/`;
 
+  // 添加 .npmrc 配置文件
+  files[".npmrc"] = `registry=https://registry.npmmirror.com/`;
+
   logs.push(`✅ 非固定模板项目生成完成`);
   console.log(`✅ 非固定模板项目生成完成`);
   return { files, packageJson, processLogs: logs };

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "scaffold-generator-online": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "scaffold-mcp-server@latest"
+      ]
+    }
+  }
+}
