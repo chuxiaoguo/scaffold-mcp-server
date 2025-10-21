@@ -1,25 +1,15 @@
 import * as path from "path";
 import * as fs from "fs/promises";
+import { fileURLToPath } from "url";
 import type {
   TemplatesConfigIndex,
   UnifiedTemplateInfo,
 } from "../../types/index.js";
 import { logger } from "../../utils/logger.js";
 
-// 兼容ES模块和CommonJS的路径解析
-let _filename: string;
-let _dirname: string;
-
-// 使用条件编译来处理不同环境
-if (typeof __dirname !== "undefined") {
-  // CommonJS环境
-  _filename = __filename || path.resolve(__dirname, "templateConfigManager.ts");
-  _dirname = __dirname;
-} else {
-  // ES模块环境，使用相对路径
-  _filename = "";
-  _dirname = path.resolve(process.cwd(), "src/core/config");
-}
+// 获取 __dirname 的 ES 模块等价方式
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * 模板配置管理器

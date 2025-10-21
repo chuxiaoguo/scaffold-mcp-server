@@ -1,11 +1,12 @@
 import * as path from "path";
 import * as fs from "fs/promises";
+import { fileURLToPath } from "url";
 import type { TechStack } from "../types/index.js";
 import { logger } from "../utils/logger.js";
 
-// 使用传统方式获取文件路径
-// 在ES模块环境中，__dirname和__filename是可用的
-// 在CommonJS环境中，它们也是可用的
+// 获取 __dirname 的 ES 模块等价方式
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface TemplateResult {
   files: Record<string, string>;
@@ -108,7 +109,6 @@ export async function generateFromLocalTemplate(
 ): Promise<TemplateResult> {
   logs.push(`🔍 开始本地模板路径计算:`);
   logs.push(`   - __dirname: ${__dirname}`);
-  logs.push(`   - 模板名称: ${template.name}`);
 
   // 检测是否在npx环境中
   const isNpxEnvironment =
