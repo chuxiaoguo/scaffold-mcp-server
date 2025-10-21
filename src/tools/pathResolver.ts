@@ -183,6 +183,11 @@ export function validateProjectPath(projectPath: string, force: boolean = false)
     // 检查父目录是否存在且可写
     const parentDir = path.dirname(projectPath);
     if (!fs.existsSync(parentDir)) {
+      // 如果是dry run模式，不需要严格验证父目录
+      if (process.env.DRY_RUN === 'true') {
+        return { valid: true };
+      }
+      
       return {
         valid: false,
         message: `父目录 ${parentDir} 不存在`,

@@ -1,7 +1,7 @@
 import type { PluginConfig, PluginContext, PluginValidationResult, MergedConfig } from './types';
-import { ActivationEngine } from './ActivationEngine';
-import { ConfigMerger } from './ConfigMerger';
-import { PluginValidator } from './PluginValidator';
+import { ActivationEngine } from './ActivationEngine.js';
+import { ConfigMerger } from './ConfigMerger.js';
+import { PluginValidator } from './PluginValidator.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -1,8 +1,35 @@
 import type { TechStack, GenerateOptions } from '../../types/index.js';
 import type { IBuilder, BuilderResult } from './index.js';
+import { PluginIntegrator } from '../plugins/PluginIntegrator.js';
+import type { GenerateScaffoldParams } from '../../types/index.js';
 
 export class ViteBuilder implements IBuilder {
+  private pluginIntegrator: PluginIntegrator;
+
+  constructor() {
+    this.pluginIntegrator = new PluginIntegrator();
+  }
+
   async build(techStack: TechStack, projectName: string, options?: GenerateOptions): Promise<BuilderResult> {
+    // 初始化插件系统
+    await this.pluginIntegrator.initialize();
+
+    // 构建插件参数
+    const pluginParams: GenerateScaffoldParams = {
+      tech_stack: [JSON.stringify(techStack)],
+      project_name: projectName,
+      output_dir: '.',
+      options: options || {}
+    };
+
+    // 集成插件配置
+    const pluginResult = await this.pluginIntegrator.integratePlugins(pluginParams);
+    
+    if (!pluginResult.success) {
+      console.warn('插件集成警告:', pluginResult.warnings);
+      console.error('插件集成错误:', pluginResult.errors);
+    }
+
     const framework = techStack.framework || 'vue3';
     const language = techStack.language || 'typescript';
     const packageManager = techStack.packageManager || 'pnpm';
@@ -11,6 +38,58 @@ export class ViteBuilder implements IBuilder {
     const dependencies: Record<string, string> = {};
     const devDependencies: Record<string, string> = {};
     const scripts: Record<string, string> = {};
+
+    // 使用插件配置或回退到默认配置
+    if (pluginResult.mergedConfig) {
+      // 应用插件依赖
+      if (pluginResult.mergedConfig.dependencies) {
+        Object.values(pluginResult.mergedConfig.dependencies).forEach(dep => {
+          if (dep.type === 'dependencies') {
+            dependencies[dep.name] = dep.version;
+          } else if (dep.type === 'devDependencies') {
+            devDependencies[dep.name] = dep.version;
+          }
+        });
+      }
+
+      // 应用插件脚本
+      if (pluginResult.mergedConfig.scripts) {
+        Object.values(pluginResult.mergedConfig.scripts).forEach(script => {
+          scripts[script.name] = script.command;
+        });
+      }
+
+      // 应用插件文件
+      if (pluginResult.mergedConfig.files) {
+        pluginResult.mergedConfig.files.forEach(file => {
+          files[file.path] = file.content || '';
+        });
+      }
+    } else {
+      // 回退到基础配置
+      this.setupBasicConfiguration(techStack, files, dependencies, devDependencies, scripts, projectName, options);
+    }
+
+    return {
+      files,
+      dependencies,
+      devDependencies,
+      scripts
+    };
+  }
+
+  private setupBasicConfiguration(
+    techStack: TechStack, 
+    files: Record<string, string>, 
+    dependencies: Record<string, string>, 
+    devDependencies: Record<string, string>, 
+    scripts: Record<string, string>,
+    projectName: string,
+    options?: GenerateOptions
+  ): void {
+    const framework = techStack.framework || 'vue3';
+    const language = techStack.language || 'typescript';
+    const packageManager = techStack.packageManager || 'pnpm';
 
     // 基础依赖
     devDependencies['vite'] = '^5.0.0';
@@ -49,8 +128,6 @@ export class ViteBuilder implements IBuilder {
       files['src/main.tsx'] = this.generateReactMain(techStack);
       files['src/App.tsx'] = this.generateReactApp(techStack);
     }
-
-    return { files, dependencies, devDependencies, scripts };
   }
 
   private setupVue3(techStack: TechStack, files: Record<string, string>, dependencies: Record<string, string>, devDependencies: Record<string, string>): void {

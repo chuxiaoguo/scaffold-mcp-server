@@ -153,11 +153,13 @@ export async function generateFromLocalTemplate(
       path.resolve(__dirname, "../../..", "scaffold-template", template.name),
       // 2. 相对于项目根目录的路径
       path.resolve(projectRoot, "scaffold-template", template.name),
-      // 3. 相对于项目根目录上级的路径
+      // 3. 在dist目录下的模板路径（构建后的环境）
+      path.resolve(__dirname, "..", "scaffold-template", template.name),
+      // 4. 相对于项目根目录上级的路径
       path.resolve(projectRoot, "..", "scaffold-template", template.name),
-      // 4. npm 全局安装时的路径
+      // 5. npm 全局安装时的路径
       path.resolve(__dirname, "../../../..", "scaffold-template", template.name),
-      // 5. 检查是否在 node_modules 中
+      // 6. 检查是否在 node_modules 中
       path.resolve(__dirname, "../../../../scaffold-template", template.name),
     ];
   }

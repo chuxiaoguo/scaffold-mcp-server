@@ -1,8 +1,35 @@
 import type { TechStack, GenerateOptions } from '../../types/index.js';
 import type { IBuilder, BuilderResult } from './index.js';
+import { PluginIntegrator } from '../plugins/PluginIntegrator.js';
+import type { GenerateScaffoldParams } from '../../types/index.js';
 
 export class UmiBuilder implements IBuilder {
+  private pluginIntegrator: PluginIntegrator;
+
+  constructor() {
+    this.pluginIntegrator = new PluginIntegrator();
+  }
+
   async build(techStack: TechStack, projectName: string, options?: GenerateOptions): Promise<BuilderResult> {
+    // 初始化插件系统
+    await this.pluginIntegrator.initialize();
+
+    // 构建插件参数
+    const pluginParams: GenerateScaffoldParams = {
+      tech_stack: [JSON.stringify(techStack)],
+      project_name: projectName,
+      output_dir: '.',
+      options: options || {}
+    };
+
+    // 集成插件配置
+    const pluginResult = await this.pluginIntegrator.integratePlugins(pluginParams);
+    
+    if (!pluginResult.success) {
+      console.warn('插件集成警告:', pluginResult.warnings);
+      console.error('插件集成错误:', pluginResult.errors);
+    }
+
     const language = techStack.language || 'typescript';
     const packageManager = techStack.packageManager || 'pnpm';
 
@@ -10,6 +37,56 @@ export class UmiBuilder implements IBuilder {
     const dependencies: Record<string, string> = {};
     const devDependencies: Record<string, string> = {};
     const scripts: Record<string, string> = {};
+
+    // 使用插件配置或回退到默认配置
+    if (pluginResult.mergedConfig) {
+      // 应用插件依赖
+      if (pluginResult.mergedConfig.dependencies) {
+        Object.values(pluginResult.mergedConfig.dependencies).forEach(dep => {
+          if (dep.type === 'dependencies') {
+            dependencies[dep.name] = dep.version;
+          } else if (dep.type === 'devDependencies') {
+            devDependencies[dep.name] = dep.version;
+          }
+        });
+      }
+
+      // 应用插件脚本
+      if (pluginResult.mergedConfig.scripts) {
+        Object.values(pluginResult.mergedConfig.scripts).forEach(script => {
+          scripts[script.name] = script.command;
+        });
+      }
+
+      // 应用插件文件
+      if (pluginResult.mergedConfig.files) {
+        pluginResult.mergedConfig.files.forEach(file => {
+          files[file.path] = file.content || '';
+        });
+      }
+    } else {
+      // 回退到基础配置
+      this.setupBasicConfiguration(techStack, files, dependencies, devDependencies, scripts, projectName, packageManager);
+    }
+
+    return {
+      files,
+      dependencies,
+      devDependencies,
+      scripts
+    };
+  }
+
+  private setupBasicConfiguration(
+    techStack: TechStack, 
+    files: Record<string, string>, 
+    dependencies: Record<string, string>, 
+    devDependencies: Record<string, string>, 
+    scripts: Record<string, string>,
+    projectName: string,
+    packageManager: string
+  ): void {
+    const language = techStack.language || 'typescript';
 
     // Umi 基础依赖
     dependencies['umi'] = '^4.0.0';
@@ -50,39 +127,26 @@ export class UmiBuilder implements IBuilder {
     // 基础脚本
     scripts['dev'] = 'umi dev';
     scripts['build'] = 'umi build';
-    scripts['postinstall'] = 'umi setup';
-    scripts['setup'] = 'umi setup';
-    scripts['start'] = 'npm run dev';
-    scripts['lint'] = 'eslint src --ext .ts,.tsx,.js,.jsx';
-    scripts['format'] = 'prettier --write src';
-    scripts['test'] = 'umi test';
+    scripts['preview'] = 'umi preview';
+    scripts['lint'] = 'umi lint';
 
-    // 生成基础文件
+    // 生成文件
     files['.umirc.ts'] = this.generateUmiConfig(techStack);
     files['src/pages/index.tsx'] = this.generateIndexPage(projectName);
     files['src/layouts/index.tsx'] = this.generateLayout();
     files['src/app.ts'] = this.generateAppConfig();
-    files['typings.d.ts'] = this.generateTypings();
-    files['README.md'] = this.generateReadme(projectName);
-    files['.gitignore'] = this.generateGitignore();
-
-    // 如果使用 TypeScript，生成 tsconfig.json
+    
     if (language === 'typescript') {
+      files['typings.d.ts'] = this.generateTypings();
       files['tsconfig.json'] = this.generateTsConfig();
     }
-
-    // 如果使用 Tailwind CSS，生成配置文件
+    
+    files['README.md'] = this.generateReadme(projectName);
+    files['.gitignore'] = this.generateGitignore();
+    
     if (techStack.style === 'tailwindcss') {
-      files['tailwind.config.js'] = this.generateTailwindConfig();
       files['postcss.config.js'] = this.generatePostcssConfig();
     }
-
-    return {
-      files,
-      dependencies,
-      devDependencies,
-      scripts
-    };
   }
 
   private generateUmiConfig(techStack: TechStack): string {

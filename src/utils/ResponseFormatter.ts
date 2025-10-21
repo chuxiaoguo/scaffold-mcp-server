@@ -132,7 +132,9 @@ ${logs.map((log) => `  ${log}`).join("\n")}
   static isFailureResult(result: GenerateResult): boolean {
     return (
       result.templateSource === "failed" ||
-      (result.templateSource?.startsWith("生成失败") ?? false)
+      (result.templateSource?.startsWith("生成失败") ?? false) ||
+      (result.templateSource?.startsWith("路径验证失败") ?? false) ||
+      (result.templateSource?.includes("失败") ?? false)
     );
   }
 }

@@ -21,7 +21,7 @@ module.exports = {
   setupFilesAfterEnv: [],
   testTimeout: 10000,
   extensionsToTreatAsEsm: ['.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [

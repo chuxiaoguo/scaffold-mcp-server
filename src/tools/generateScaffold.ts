@@ -59,6 +59,14 @@ export async function generateScaffold(
     console.log(`🚀 开始生成脚手架项目...`);
     console.log(`📋 原始参数:`, JSON.stringify(params, null, 2));
 
+    // 设置DRY_RUN环境变量
+    if (params.options?.dryRun) {
+      process.env.DRY_RUN = 'true';
+      processLogs.push(`🔍 启用预览模式 (Dry Run)`);
+    } else {
+      delete process.env.DRY_RUN;
+    }
+
     // 先解析路径和项目名称
     const { projectPath, projectName } = resolveProjectPathAndName(params);
 
@@ -248,18 +256,11 @@ export async function generateScaffold(
     const generateResult: GenerateResult = {
       projectName,
       targetPath: projectPath,
-      tree:
-        typeof result.directoryTree === "string"
-          ? {
-              name: projectName,
-              type: "directory",
-              path: projectPath,
-            }
-          : result.directoryTree || {
-              name: "empty",
-              type: "directory",
-              path: projectPath,
-            },
+      tree: {
+        name: projectName,
+        type: "directory",
+        path: projectPath,
+      },
       files: Array.isArray(result.fileSummary)
         ? result.fileSummary.map((f) => ({ path: f, size: 0, type: "file" }))
         : [],
@@ -268,6 +269,11 @@ export async function generateScaffold(
         : "非固定模板生成器",
       processLogs,
     };
+
+    // 如果有directoryTree，则添加到结果中
+    if (result.directoryTree) {
+      generateResult.directoryTree = result.directoryTree;
+    }
 
     processLogs.push(`✅ 脚手架项目生成完成！`);
     console.log(`✅ 脚手架项目生成完成！`);

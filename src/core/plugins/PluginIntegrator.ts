@@ -4,8 +4,8 @@ import type {
   MergedConfig,
   TechStack 
 } from './types';
-import { PluginManager } from './PluginManager';
-import type { GenerateScaffoldParams } from '../../types/index';
+import { PluginManager } from './PluginManager.js';
+import type { GenerateScaffoldParams } from '../../types/index.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -33,8 +33,8 @@ export class PluginIntegrator {
   async initialize(): Promise<void> {
     // 添加默认插件搜索路径
     const defaultPluginPaths = [
-      path.join(process.cwd(), 'configs/common/plugins'),
-      path.join(__dirname, '../../../configs/common/plugins')
+      path.join(process.cwd(), 'src/plugin-configs/plugins'),
+      path.join(__dirname, '../../plugin-configs/plugins')
     ];
 
     for (const pluginPath of defaultPluginPaths) {

@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "name": "lint-staged",
+    "version": "1.0.0",
+    "category": "tools",
+    "description": "Lint-staged configuration for running linters on staged files",
+    "author": "Scaffold MCP Server",
+    "homepage": "https://github.com/okonet/lint-staged",
+    "keywords": ["lint-staged", "pre-commit", "linting", "git-hooks", "code-quality"]
+  },
+  "activation": {
+    "techStack": {
+      "framework": ["vue", "vue3", "react", "angular"]
+    }
+  },
+  "dependencies": [
+    {
+      "name": "lint-staged",
+      "version": "^15.1.0",
+      "type": "devDependencies"
+    }
+  ],
+  "files": [
+    {
+      "path": ".lintstagedrc.js",
+      "content": "module.exports = {\n  // JavaScript/TypeScript files\n  '*.{js,jsx,ts,tsx}': [\n    'eslint --fix',\n    'prettier --write'\n  ],\n  \n  // Vue files\n  '*.vue': [\n    'eslint --fix',\n    'stylelint --fix',\n    'prettier --write'\n  ],\n  \n  // CSS/SCSS files\n  '*.{css,scss,less}': [\n    'stylelint --fix',\n    'prettier --write'\n  ],\n  \n  // JSON files\n  '*.json': [\n    'prettier --write'\n  ],\n  \n  // Markdown files\n  '*.md': [\n    'prettier --write'\n  ],\n  \n  // YAML files\n  '*.{yml,yaml}': [\n    'prettier --write'\n  ]\n};",
+      "condition": {
+        "framework": ["vue", "vue3"]
+      }
+    },
+    {
+      "path": ".lintstagedrc.js",
+      "content": "module.exports = {\n  // JavaScript/TypeScript files\n  '*.{js,jsx,ts,tsx}': [\n    'eslint --fix',\n    'prettier --write'\n  ],\n  \n  // CSS/SCSS files\n  '*.{css,scss,less}': [\n    'stylelint --fix',\n    'prettier --write'\n  ],\n  \n  // JSON files\n  '*.json': [\n    'prettier --write'\n  ],\n  \n  // Markdown files\n  '*.md': [\n    'prettier --write'\n  ],\n  \n  // YAML files\n  '*.{yml,yaml}': [\n    'prettier --write'\n  ]\n};",
+      "condition": {
+        "framework": ["react"]
+      }
+    }
+  ],
+  "defaultConfig": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,scss,less}": [
+      "stylelint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

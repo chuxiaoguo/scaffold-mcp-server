@@ -902,6 +902,128 @@ Thumbs.db
 }
 
 /**
+ * 生成模拟的目录树结构（用于 dry run 模式）
+ */
+function generateMockDirectoryTree(projectName: string, files: Record<string, string>, packageJson: any): string {
+  const tree: string[] = [];
+  tree.push(`${projectName}/`);
+  
+  // 添加 package.json
+  tree.push(`├── package.json`);
+  
+  // 按目录分组文件
+  const filesByDir: Record<string, string[]> = {};
+  for (const filePath of Object.keys(files)) {
+    const dir = path.dirname(filePath);
+    const dirKey = dir || '.';
+    if (!filesByDir[dirKey]) {
+      filesByDir[dirKey] = [];
+    }
+    filesByDir[dirKey].push(path.basename(filePath));
+  }
+  
+  // 生成目录结构
+  const dirs = Object.keys(filesByDir).sort();
+  for (let i = 0; i < dirs.length; i++) {
+    const dir = dirs[i];
+    if (!dir) continue;
+    
+    const isLastDir = i === dirs.length - 1;
+    
+    if (dir !== '.') {
+      tree.push(`${isLastDir ? '└──' : '├──'} ${dir}/`);
+      
+      const filesInDir = filesByDir[dir];
+      if (filesInDir) {
+        filesInDir.sort();
+        for (let j = 0; j < filesInDir.length; j++) {
+          const file = filesInDir[j];
+          const isLastFile = j === filesInDir.length - 1;
+          const prefix = isLastDir ? '    ' : '│   ';
+          tree.push(`${prefix}${isLastFile ? '└──' : '├──'} ${file}`);
+        }
+      }
+    } else {
+      // 根目录文件
+      const filesInRoot = filesByDir[dir];
+      if (filesInRoot) {
+        filesInRoot.sort();
+        for (let j = 0; j < filesInRoot.length; j++) {
+          const file = filesInRoot[j];
+          const isLastFile = j === filesInRoot.length - 1 && dirs.length === 1;
+          tree.push(`${isLastFile ? '└──' : '├──'} ${file}`);
+        }
+      }
+    }
+  }
+  
+  return tree.join('\n');
+}
+
+/**
+ * 生成模拟的文件摘要（用于 dry run 模式）
+ */
+function generateMockFileSummary(files: Record<string, string>, packageJson: any, projectName: string): string[] {
+  const summaries: string[] = [];
+  
+  // 添加 package.json 摘要
+  const deps = Object.keys(packageJson.dependencies || {}).length;
+  const devDeps = Object.keys(packageJson.devDependencies || {}).length;
+  summaries.push(`📄 package.json (预计大小) - 项目配置 (${deps} 个依赖, ${devDeps} 个开发依赖)`);
+  
+  // 统计目录数量
+  const dirs = new Set<string>();
+  for (const filePath of Object.keys(files)) {
+    const dir = path.dirname(filePath);
+    if (dir !== '.') {
+      dirs.add(dir);
+    }
+  }
+  
+  if (dirs.size > 0) {
+    summaries.unshift(`📁 包含 ${dirs.size} 个子目录`);
+  }
+  
+  // 添加文件摘要
+  let fileCount = 0;
+  for (const [filePath, content] of Object.entries(files)) {
+    if (fileCount >= 20) break; // 限制显示数量
+    
+    const fileName = path.basename(filePath);
+    const ext = path.extname(fileName).toLowerCase();
+    const lines = content.split('\n').length;
+    const estimatedSize = content.length;
+    const sizeStr = estimatedSize > 1024 ? `${Math.round(estimatedSize / 1024)}KB` : `${estimatedSize}B`;
+    
+    let contentType = '';
+    if (['.ts', '.js', '.tsx', '.jsx'].includes(ext)) {
+      if (content.includes('export default') || content.includes('export {')) {
+        contentType = `${ext.slice(1).toUpperCase()} 模块 (${lines} 行)`;
+      } else if (content.includes('import React') || content.includes('from \'react\'')) {
+        contentType = `React 组件 (${lines} 行)`;
+      } else if (content.includes('import Vue') || content.includes('from \'vue\'')) {
+        contentType = `Vue 组件 (${lines} 行)`;
+      } else {
+        contentType = `${ext.slice(1).toUpperCase()} 文件 (${lines} 行)`;
+      }
+    } else if (ext === '.json') {
+      contentType = `JSON 配置文件`;
+    } else if (['.css', '.scss', '.less'].includes(ext)) {
+      contentType = `样式文件 (${lines} 行)`;
+    } else if (['.html'].includes(ext)) {
+      contentType = `HTML 文件 (${lines} 行)`;
+    } else {
+      contentType = `${ext ? ext.slice(1).toUpperCase() : '文本'} 文件 (${lines} 行)`;
+    }
+    
+    summaries.push(`📄 ${fileName} (预计${sizeStr}) - ${contentType}`);
+    fileCount++;
+  }
+  
+  return summaries;
+}
+
+/**
  * 生成项目的主要函数
  */
 export async function generateProject(
@@ -922,6 +1044,9 @@ export async function generateProject(
   processLogs?: string[];
 }> {
   const logs: string[] = [];
+  let directoryTree: string;
+  let fileSummary: string[];
+  let finalFileCount: number;
 
   try {
     logs.push(`🚀 开始生成项目...`);
@@ -1039,10 +1164,24 @@ export async function generateProject(
       `   - 依赖数量: ${Object.keys(packageJson.dependencies || {}).length + Object.keys(packageJson.devDependencies || {}).length}`
     );
 
-    // 8. 如果是预览模式，只返回信息
+    // 8. 如果是预览模式，生成目录树和文件摘要
     if (options.dryRun) {
       logs.push(`👀 预览模式，不创建实际文件`);
       console.log(`👀 预览模式，不创建实际文件`);
+
+      // 生成预期的目录树结构
+      logs.push(`📊 生成预期目录结构...`);
+      directoryTree = generateMockDirectoryTree(projectName, files, packageJson);
+      logs.push(`   - 预期目录树生成完成`);
+      
+      // 生成预期的文件摘要
+      logs.push(`📊 生成预期文件摘要...`);
+      fileSummary = generateMockFileSummary(files, packageJson, projectName);
+      logs.push(`   - 预期文件摘要生成完成`);
+      
+      // 统计预期的文件数量
+      finalFileCount = Object.keys(files).length + 1; // +1 for package.json
+      logs.push(`   - 预期文件数量: ${finalFileCount}`);
 
       const fileList = Object.keys(files)
         .map((f) => `  📄 ${f}`)
@@ -1066,59 +1205,108 @@ ${fileList}
 📦 依赖列表:
 ${dependencyList}`,
         projectPath,
+        directoryTree,
+        fileSummary,
         processLogs: logs,
       };
     }
 
-    // 9. 创建项目文件
-    logs.push(`📁 创建项目文件...`);
-    await createProjectFiles(projectPath, files, projectName, logs);
+    if (options.dryRun) {
+      logs.push(`👀 预览模式，不创建实际文件`);
+      console.log(`👀 预览模式，不创建实际文件`);
 
-    // 10. 创建 package.json
-    logs.push(`📦 创建 package.json...`);
-    const packageJsonPath = path.join(projectPath, "package.json");
-    await import("fs/promises").then((fs) =>
-      fs.writeFile(
-        packageJsonPath,
-        JSON.stringify(packageJson, null, 2),
-        "utf-8"
-      )
-    );
-    logs.push(`✅ package.json 创建成功`);
-    console.log(`✅ 创建 package.json`);
+      // 生成预期的目录树结构
+      logs.push(`📊 生成预期目录结构...`);
+      directoryTree = generateMockDirectoryTree(projectName, files, packageJson);
+      logs.push(`   - 预期目录树生成完成`);
+      
+      // 生成预期的文件摘要
+      logs.push(`📊 生成预期文件摘要...`);
+      fileSummary = generateMockFileSummary(files, packageJson, projectName);
+      logs.push(`   - 预期文件摘要生成完成`);
+      
+      // 统计预期的文件数量
+      finalFileCount = Object.keys(files).length + 1; // +1 for package.json
+      logs.push(`   - 预期文件数量: ${finalFileCount}`);
 
-    // 11. 生成项目摘要
-    logs.push(`📊 生成项目摘要...`);
-    const directoryTree = await generateDirectoryTree(projectPath);
-    const fileSummary = await generateFileSummary(projectPath);
-    logs.push(`   - 目录树生成完成`);
-    logs.push(`   - 文件摘要生成完成`);
+      const fileList = Object.keys(files)
+        .map((f) => `  📄 ${f}`)
+        .join("\n");
+      const dependencyList = Object.keys(packageJson.dependencies || {})
+        .concat(Object.keys(packageJson.devDependencies || {}))
+        .map((d) => `  📦 ${d}`)
+        .join("\n");
 
-    // 12. 统计最终的实际文件数量
-    logs.push(`📊 统计最终文件数量...`);
-    const fs = await import("fs/promises");
+      return {
+        success: true,
+        message: `预览模式 - 将要创建的项目结构：
 
-    const countFinalFiles = async (dirPath: string): Promise<number> => {
-      let count = 0;
-      try {
-        const entries = await fs.readdir(dirPath, { withFileTypes: true });
+📁 项目: ${projectName}
+📍 路径: ${projectPath}
+🛠️  技术栈: ${techStackToArray(normalizedTechStack).join(" + ")}
 
-        for (const entry of entries) {
-          if (entry.isFile()) {
-            count++;
-          } else if (entry.isDirectory() && entry.name !== "node_modules") {
-            const subDirPath = path.join(dirPath, entry.name);
-            count += await countFinalFiles(subDirPath);
+📄 文件列表:
+${fileList}
+
+📦 依赖列表:
+${dependencyList}`,
+        projectPath,
+        directoryTree,
+        fileSummary,
+        processLogs: logs,
+      };
+    } else {
+      // 正常模式：实际创建文件
+      // 9. 创建项目文件
+      logs.push(`📁 创建项目文件...`);
+      await createProjectFiles(projectPath, files, projectName, logs);
+
+      // 10. 创建 package.json
+      logs.push(`📦 创建 package.json...`);
+      const packageJsonPath = path.join(projectPath, "package.json");
+      await import("fs/promises").then((fs) =>
+        fs.writeFile(
+          packageJsonPath,
+          JSON.stringify(packageJson, null, 2),
+          "utf-8"
+        )
+      );
+      logs.push(`✅ package.json 创建成功`);
+      console.log(`✅ 创建 package.json`);
+
+      // 11. 生成项目摘要
+      logs.push(`📊 生成项目摘要...`);
+      directoryTree = await generateDirectoryTree(projectPath);
+      fileSummary = await generateFileSummary(projectPath);
+      logs.push(`   - 目录树生成完成`);
+      logs.push(`   - 文件摘要生成完成`);
+
+      // 12. 统计最终的实际文件数量
+      logs.push(`📊 统计最终文件数量...`);
+      const fs = await import("fs/promises");
+
+      const countFinalFiles = async (dirPath: string): Promise<number> => {
+        let count = 0;
+        try {
+          const entries = await fs.readdir(dirPath, { withFileTypes: true });
+
+          for (const entry of entries) {
+            if (entry.isFile()) {
+              count++;
+            } else if (entry.isDirectory() && entry.name !== "node_modules") {
+              const subDirPath = path.join(dirPath, entry.name);
+              count += await countFinalFiles(subDirPath);
+            }
           }
+        } catch (error) {
+          // 忽略无法访问的目录
         }
-      } catch (error) {
-        // 忽略无法访问的目录
-      }
-      return count;
-    };
+        return count;
+      };
 
-    const finalFileCount = await countFinalFiles(projectPath);
-    logs.push(`   - 最终文件数量: ${finalFileCount}`);
+      finalFileCount = await countFinalFiles(projectPath);
+      logs.push(`   - 最终文件数量: ${finalFileCount}`);
+    }
 
     logs.push(`🎉 项目生成完成！`);
     console.log(`🎉 项目生成完成！`);

@@ -11,7 +11,7 @@ import type { GenerateScaffoldParams } from "./types/index.js";
 import { ResponseFormatter } from "./utils/ResponseFormatter.js";
 import { MCPErrorHandler } from "./utils/MCPErrorHandler.js";
 import { MessageTemplates } from "./utils/MessageTemplates.js";
-import { getAllToolSchemas, isValidToolName } from "./config/toolSchemas.js";
+import { getAllToolSchemas } from "./config/toolSchemas.js";
 
 class ScaffoldMCPServer {
   private server: Server;
@@ -72,7 +72,7 @@ class ScaffoldMCPServer {
     console.error("[DEBUG] 工具处理器设置完成");
   }
 
-  private async handleGenerateScaffold(params: GenerateScaffoldParams) {
+  public async handleGenerateScaffold(params: GenerateScaffoldParams) {
     try {
       const result = await generateScaffold(params);
 
@@ -100,7 +100,7 @@ class ScaffoldMCPServer {
         targetPath: result.targetPath,
         templateSource: result.templateSource || "未知",
         fileCount: result.files.length,
-        directoryTree: this.formatDirectoryTree(result.tree),
+        directoryTree: result.directoryTree || this.formatDirectoryTree(result.tree),
         processLogs: MessageTemplates.renderProcessLogs(
           result.processLogs || []
         ),
@@ -108,6 +108,7 @@ class ScaffoldMCPServer {
 
       return {
         content: [{ type: "text", text: successMessage }],
+        isError: false,
       };
     } catch (error) {
       const errorMessage = MessageTemplates.renderError({
