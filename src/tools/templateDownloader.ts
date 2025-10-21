@@ -111,27 +111,63 @@ export async function generateFromLocalTemplate(
   logs.push(`   - __dirname: ${__dirname}`);
   logs.push(`   - 模板名称: ${template.name}`);
 
-  const projectRoot = path.resolve(__dirname, "../../..");
-  logs.push(`   - 项目根目录: ${projectRoot}`);
+  // 检测是否在npx环境中
+  const isNpxEnvironment = __dirname.includes('_npx') || __dirname.includes('node_modules/scaffold-mcp-server');
+  logs.push(`   - 是否npx环境: ${isNpxEnvironment}`);
+  console.log(`   - 是否npx环境: ${isNpxEnvironment}`);
 
+  let projectRoot: string = path.resolve(__dirname, "../../..");
+  let possiblePaths: string[] = [];
+
+  if (isNpxEnvironment) {
+    // npx环境：__dirname 通常是 /path/to/_npx/xxx/node_modules/scaffold-mcp-server/dist/tools
+    // 需要找到 scaffold-mcp-server 包的根目录
+    const packageRootMatch = __dirname.match(/(.*\/scaffold-mcp-server)/);
+    if (packageRootMatch && packageRootMatch[1]) {
+      projectRoot = packageRootMatch[1];
+      logs.push(`   - npx包根目录: ${projectRoot}`);
+      console.log(`   - npx包根目录: ${projectRoot}`);
+      
+      // npx环境下的路径策略
+      possiblePaths = [
+        // 1. 直接在包根目录下的scaffold-template
+        path.resolve(projectRoot, "scaffold-template", template.name),
+        // 2. 相对于dist目录的上级目录
+        path.resolve(__dirname, "../..", "scaffold-template", template.name),
+        // 3. 相对于当前脚本目录的上级目录
+        path.resolve(__dirname, "../../scaffold-template", template.name),
+      ];
+    } else {
+      // 如果无法解析包根目录，使用传统方法
+      projectRoot = path.resolve(__dirname, "../../..");
+      possiblePaths = [
+        path.resolve(__dirname, "../../..", "scaffold-template", template.name),
+        path.resolve(__dirname, "../..", "scaffold-template", template.name),
+      ];
+    }
+  } else {
+    // 开发环境或本地安装环境
+    projectRoot = path.resolve(__dirname, "../../..");
+    possiblePaths = [
+      // 1. 相对于当前脚本的路径（开发环境）
+      path.resolve(__dirname, "../../..", "scaffold-template", template.name),
+      // 2. 相对于项目根目录的路径
+      path.resolve(projectRoot, "scaffold-template", template.name),
+      // 3. 相对于项目根目录上级的路径
+      path.resolve(projectRoot, "..", "scaffold-template", template.name),
+      // 4. npm 全局安装时的路径
+      path.resolve(__dirname, "../../../..", "scaffold-template", template.name),
+      // 5. 检查是否在 node_modules 中
+      path.resolve(__dirname, "../../../../scaffold-template", template.name),
+    ];
+  }
+
+  logs.push(`   - 项目根目录: ${projectRoot}`);
   console.log(`🔍 本地模板路径计算:`);
   console.log(`   - __dirname: ${__dirname}`);
   console.log(`   - 模板名称: ${template.name}`);
+  console.log(`   - 是否npx环境: ${isNpxEnvironment}`);
   console.log(`   - 项目根目录: ${projectRoot}`);
-
-  // 多种路径查找策略
-  const possiblePaths = [
-    // 1. 相对于当前脚本的路径（开发环境）
-    path.resolve(__dirname, "../../..", "scaffold-template", template.name),
-    // 2. 相对于项目根目录的路径
-    path.resolve(projectRoot, "scaffold-template", template.name),
-    // 3. 相对于项目根目录上级的路径
-    path.resolve(projectRoot, "..", "scaffold-template", template.name),
-    // 4. npm 全局安装时的路径
-    path.resolve(__dirname, "../../../..", "scaffold-template", template.name),
-    // 5. 检查是否在 node_modules 中
-    path.resolve(__dirname, "../../../../scaffold-template", template.name),
-  ];
 
   logs.push(`   - 尝试的路径列表:`);
   possiblePaths.forEach((p, i) => {
