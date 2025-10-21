@@ -1,6 +1,6 @@
 {
   "name": "scaffold-mcp-server",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "MCP server for generating frontend scaffolds",
   "main": "dist/index.js",
   "bin": {
