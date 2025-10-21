@@ -1,8 +1,9 @@
-# Scaffold MCP Server v1.0.0 发布说明
+# Scaffold MCP Server v1.1.17 发布说明
 
 ## 🎉 版本亮点
 
-这是 Scaffold MCP Server 的首个正式版本，提供了完整的前端脚手架生成功能。
+### 📁 自动创建目录功能
+在 v1.1.17 版本中，我们添加了一个非常实用的功能：当用户指定的输出目录不存在时，系统会自动递归创建该目录，而不是报错。这个功能默认是开启的（autoCreateDir: true），大大提升了用户体验。
 
 ## ✨ 主要功能
 
@@ -23,6 +24,7 @@
 - **模板匹配引擎**: 基于配置的智能模板选择
 - **本地模板支持**: 支持本地模板配置和缓存
 - **性能优化**: 内存缓存和增量更新机制
+- **自动目录创建**: 自动递归创建不存在的输出目录（v1.1.17新增）
 
 ## 🐛 修复的问题
 
@@ -40,6 +42,7 @@
 - ✅ 修复了生成结果检查逻辑
 - ✅ 完善了文件权限处理
 - ✅ 优化了错误处理机制
+- ✅ 添加了自动目录创建功能（v1.1.17新增）
 
 ## 📦 安装和使用
 
@@ -57,8 +60,8 @@ npm install scaffold-mcp-server
 
 ### 使用示例
 ```bash
-# 生成 Vue3 + TypeScript 项目
-generate_scaffold my-vue-app vue3+typescript
+# 生成 Vue3 + TypeScript 项目到不存在的目录（自动创建）
+generate_scaffold my-vue-app vue3+typescript --output-dir ./projects/new-project
 
 # 生成 React + TypeScript 项目
 generate_scaffold my-react-app react+typescript
@@ -72,6 +75,7 @@ generate_scaffold my-electron-app electron+vue3
 - ✅ 服务器状态检查
 - ✅ 模板匹配测试
 - ✅ 脚手架生成测试
+- ✅ 自动目录创建测试（v1.1.17新增）
 - ✅ 性能测试
 
 所有测试均通过，确保功能稳定可靠。
@@ -91,6 +95,17 @@ generate_scaffold my-electron-app electron+vue3
 - 完善文档和示例
 
 ## 📝 更新日志
+
+### v1.1.17 (2025-10-22)
+- 📁 添加自动创建目录功能（当输出目录不存在时自动递归创建）
+- 🛠️ 修复了 types/index.ts 文件的语法错误
+- 🧪 添加了自动目录创建功能的测试用例
+- 📚 更新了文档和示例
+
+### v1.1.16 (2024-10-17)
+- 🐛 修复了 ES 模块环境下的 __dirname 问题
+- 🐛 修复了打包后配置文件路径不正确的问题
+- 📚 完善了文档和示例
 
 ### v1.0.0 (2024-10-16)
 - 🎉 首次正式发布

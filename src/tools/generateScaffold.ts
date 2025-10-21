@@ -128,9 +128,12 @@ export async function generateScaffold(
 
     // 2. 路径验证
     processLogs.push(`🔍 验证项目路径...`);
+    // 获取autoCreateDir参数，默认为true
+    const autoCreateDir = params.options?.autoCreateDir !== false; // 默认为true
     const validation = validateProjectPath(
       projectPath,
-      params.options?.force || false
+      params.options?.force || false,
+      autoCreateDir
     );
 
     if (!validation.valid) {

@@ -15,6 +15,7 @@ export interface GenerateOptions {
   force?: boolean;
   dryRun?: boolean;
   testRunner?: 'jest' | 'vitest';
+  autoCreateDir?: boolean; // 添加自动创建目录选项，默认为true
 }
 
 export interface GenerateScaffoldParams {

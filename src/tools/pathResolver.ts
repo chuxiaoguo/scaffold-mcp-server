@@ -143,7 +143,7 @@ export function resolveProjectPathAndName(
 /**
  * 验证路径是否可用
  */
-export function validateProjectPath(projectPath: string, force: boolean = false): {
+export function validateProjectPath(projectPath: string, force: boolean = false, autoCreateDir: boolean = true): {
   valid: boolean;
   message?: string;
   suggestions?: string[];
@@ -188,15 +188,36 @@ export function validateProjectPath(projectPath: string, force: boolean = false)
         return { valid: true };
       }
       
-      return {
-        valid: false,
-        message: `父目录 ${parentDir} 不存在`,
-        suggestions: [
-          '确保父目录存在',
-          '使用绝对路径',
-          '检查路径拼写是否正确'
-        ]
-      };
+      // 如果启用了自动创建目录功能，则尝试创建父目录
+      if (autoCreateDir) {
+        try {
+          // 使用递归方式创建目录
+          fs.mkdirSync(parentDir, { recursive: true });
+          console.log(`✅ 自动创建目录: ${parentDir}`);
+          return { valid: true };
+        } catch (error: any) {
+          return {
+            valid: false,
+            message: `自动创建父目录 ${parentDir} 失败: ${error.message}`,
+            suggestions: [
+              '检查目录权限',
+              '使用管理员权限运行',
+              '手动创建父目录'
+            ]
+          };
+        }
+      } else {
+        return {
+          valid: false,
+          message: `父目录 ${parentDir} 不存在`,
+          suggestions: [
+            '确保父目录存在',
+            '使用绝对路径',
+            '检查路径拼写是否正确',
+            '使用 --auto-create-dir 选项自动创建目录'
+          ]
+        };
+      }
     }
 
     // 检查父目录权限

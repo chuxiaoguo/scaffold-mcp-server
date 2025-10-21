@@ -68,6 +68,11 @@ export const GENERATE_SCAFFOLD_SCHEMA: ToolSchema = {
             enum: ['jest', 'vitest'],
             description: '测试运行器选择',
             default: 'jest'
+          },
+          autoCreateDir: {
+            type: 'boolean',
+            description: '是否自动创建不存在的父目录',
+            default: true
           }
         }
       }
