@@ -10,9 +10,16 @@ import { logger } from "../../utils/logger.js";
 let _filename: string;
 let _dirname: string;
 
-// 使用Node.js的内置方法来确定文件路径
-_filename = path.resolve(__dirname, "templateConfigManager.ts");
-_dirname = __dirname;
+// 使用条件编译来处理不同环境
+if (typeof __dirname !== "undefined") {
+  // CommonJS环境
+  _filename = __filename || path.resolve(__dirname, "templateConfigManager.ts");
+  _dirname = __dirname;
+} else {
+  // ES模块环境，使用相对路径
+  _filename = "";
+  _dirname = path.resolve(process.cwd(), "src/core/config");
+}
 
 /**
  * 模板配置管理器

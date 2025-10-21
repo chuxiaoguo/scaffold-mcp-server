@@ -111,7 +111,9 @@ export async function generateFromLocalTemplate(
   logs.push(`   - 模板名称: ${template.name}`);
 
   // 检测是否在npx环境中
-  const isNpxEnvironment = __dirname.includes('_npx') || __dirname.includes('node_modules/scaffold-mcp-server');
+  const isNpxEnvironment =
+    __dirname.includes("_npx") ||
+    __dirname.includes("node_modules/scaffold-mcp-server");
   logs.push(`   - 是否npx环境: ${isNpxEnvironment}`);
   console.log(`   - 是否npx环境: ${isNpxEnvironment}`);
 
@@ -126,7 +128,7 @@ export async function generateFromLocalTemplate(
       projectRoot = packageRootMatch[1];
       logs.push(`   - npx包根目录: ${projectRoot}`);
       console.log(`   - npx包根目录: ${projectRoot}`);
-      
+
       // npx环境下的路径策略
       possiblePaths = [
         // 1. 直接在包根目录下的scaffold-template
@@ -157,7 +159,12 @@ export async function generateFromLocalTemplate(
       // 4. 相对于项目根目录上级的路径
       path.resolve(projectRoot, "..", "scaffold-template", template.name),
       // 5. npm 全局安装时的路径
-      path.resolve(__dirname, "../../../..", "scaffold-template", template.name),
+      path.resolve(
+        __dirname,
+        "../../../..",
+        "scaffold-template",
+        template.name
+      ),
       // 6. 检查是否在 node_modules 中
       path.resolve(__dirname, "../../../../scaffold-template", template.name),
     ];
