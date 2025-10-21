@@ -2,6 +2,21 @@
 
 所有重要的项目更改都会记录在此文件中。
 
+## [1.1.13] - 2025-10-21
+
+### Changes
+- 6f78bd8 chore: bump version to 1.1.12
+- b53d72c fix: resolve TailwindCSS v4 compatibility issues in templates
+- d993941 fix: 完全修复 TailwindCSS v4 PostCSS 配置问题
+- 3029c9d fix: 修复 vue3-vite-typescript 模板的 PostCSS 配置
+- cabbc76 fix: 修复 vite 开发服务器 localhost 解析错误
+- 0d17ce5 chore: release v1.1.11
+- 46fdf25 feat: 添加项目架构文档和.npmrc配置
+- c2ea300 1.1.10
+- df13d98 Optimize template copying with dedicated script
+- ecaac21 1.1.9
+
+
 ## [1.1.11] - 2025-10-21
 
 ### Changes
