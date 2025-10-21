@@ -25,7 +25,7 @@
     "RELEASE_NOTES.md"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/index.js && node scripts/copy-templates.cjs",
+    "build": "tsc && chmod +x dist/index.js && node scripts/copy-config.cjs && node scripts/copy-templates.cjs",
     "copy-templates": "node scripts/copy-templates.cjs",
     "start": "node dist/index.js",
     "dev": "tsc --watch",

@@ -1,7 +1,13 @@
 import * as fs from "fs/promises";
 import * as path from "path";
+import { fileURLToPath } from "url";
+import { existsSync } from "fs";
 import { logger } from "../../utils/logger.js";
 import type { TemplatesConfigIndex } from "../../types/index.js";
+
+// 获取 __dirname 的 ES 模块等价方式
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface SyncResult {
   success: boolean;
@@ -25,7 +31,7 @@ export class TemplateSync {
   private logs: string[] = [];
 
   constructor() {
-    // 使用更传统的方式来确定项目根目录
+    // 使用 ES 模块兼容的方式确定项目根目录
     // 假设这个文件位于 src/core/sync/ 目录下
     this.projectRoot = path.resolve(__dirname, "../../../");
 
@@ -35,10 +41,13 @@ export class TemplateSync {
       this.templateDir,
       "templates.config.json"
     );
-    this.remoteConfigPath = path.join(
-      this.projectRoot,
-      "src/config/templateConfig.json"
-    );
+    
+    // 修复路径问题：在打包后，配置文件应该在 dist/config/ 目录下
+    // 而不是 src/config/ 目录下
+    const configDir = existsSync(path.join(this.projectRoot, "dist")) 
+      ? path.join(this.projectRoot, "dist", "config")
+      : path.join(this.projectRoot, "src", "config");
+    this.remoteConfigPath = path.join(configDir, "templateConfig.json");
   }
 
   private addLog(message: string): void {
