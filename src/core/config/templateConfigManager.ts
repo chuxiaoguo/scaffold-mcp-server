@@ -1,17 +1,18 @@
 import * as path from "path";
 import * as fs from "fs/promises";
-import { fileURLToPath } from "url";
 import type {
   TemplatesConfigIndex,
   UnifiedTemplateInfo,
 } from "../../types/index.js";
 import { logger } from "../../utils/logger.js";
 
-// 正确的ES模块路径解析
-const _filename = fileURLToPath(import.meta.url);
-const _dirname = path.dirname(_filename);
-const __filename = _filename;
-const __dirname = _dirname;
+// 兼容ES模块和CommonJS的路径解析
+let _filename: string;
+let _dirname: string;
+
+// 使用Node.js的内置方法来确定文件路径
+_filename = path.resolve(__dirname, "templateConfigManager.ts");
+_dirname = __dirname;
 
 /**
  * 模板配置管理器

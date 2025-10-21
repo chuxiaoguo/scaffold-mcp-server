@@ -1,12 +1,11 @@
 import * as path from "path";
 import * as fs from "fs/promises";
-import { fileURLToPath } from "url";
 import type { TechStack } from "../types/index.js";
 import { logger } from "../utils/logger.js";
 
-// 正确的ES模块路径解析
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// 使用传统方式获取文件路径
+// 在ES模块环境中，__dirname和__filename是可用的
+// 在CommonJS环境中，它们也是可用的
 
 export interface TemplateResult {
   files: Record<string, string>;
