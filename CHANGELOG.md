@@ -2,6 +2,21 @@
 
 所有重要的项目更改都会记录在此文件中。
 
+## [1.1.7] - 2025-10-21
+
+### Changes
+- 9fb7369 bump version to 1.1.6
+- c226419 chore: release v1.1.5
+- 4a1f35d fix: add bundledDependencies to resolve MCP connection issues - v1.1.4
+- 7181c84 chore: release v1.1.3
+- 5d11fb3 fix: add executable permission to dist/index.js in build script
+- 71c9d0f chore: release v1.1.2
+- ec9afcf fix: add bin configuration for npx support
+- 2578159 chore: release v1.1.1
+- bc0205c 删除有问题的测试文件以修复发布流程
+- 3c86ab2 feat: 添加自动化npm包发布脚本和完善项目配置
+
+
 ## [1.1.5] - 2025-10-21
 
 ### Changes
