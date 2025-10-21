@@ -2,6 +2,21 @@
 
 所有重要的项目更改都会记录在此文件中。
 
+## [1.1.11] - 2025-10-21
+
+### Changes
+- 46fdf25 feat: 添加项目架构文档和.npmrc配置
+- c2ea300 1.1.10
+- df13d98 Optimize template copying with dedicated script
+- ecaac21 1.1.9
+- 13eb96f Fix npx environment template path resolution
+- ee29a88 1.1.8
+- ac22a52 Add detailed debug logging for MCP server startup and connection
+- fe6a1c3 chore: release v1.1.7
+- 9fb7369 bump version to 1.1.6
+- c226419 chore: release v1.1.5
+
+
 ## [1.1.7] - 2025-10-21
 
 ### Changes
