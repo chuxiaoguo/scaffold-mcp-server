@@ -11,6 +11,7 @@ import {
   generateFromLocalTemplate,
   type TemplateResult,
 } from "./templateDownloader.js";
+import { ToolInjectorManager } from "../core/injectors/ToolInjectorManager.js";
 import {
   createProjectFiles,
   generateDirectoryTree,
@@ -56,16 +57,6 @@ export function matchFixedTemplate(
   techStack: TechStack,
   logs: string[] = []
 ): any | null {
-  logs.push(`🔍 匹配固定模板...`);
-  logs.push(`   - 框架: ${techStack.framework}`);
-  logs.push(`   - 构建工具: ${techStack.builder}`);
-  logs.push(`   - 语言: ${techStack.language}`);
-
-  console.log(`🔍 匹配固定模板...`);
-  console.log(`   - 框架: ${techStack.framework}`);
-  console.log(`   - 构建工具: ${techStack.builder}`);
-  console.log(`   - 语言: ${techStack.language}`);
-
   const template = FIXED_TEMPLATES.find(
     (t) =>
       t.framework === techStack.framework &&
@@ -199,7 +190,9 @@ function fillDefaultValues(
     if (matchingTemplate) {
       // 注意：不要自动设置框架，因为用户可能想要使用不同的框架
       // 例如：vue2 + webpack + typescript 不应该被映射为 react + webpack + typescript
-      logs.push(`⚠️ 找到匹配模板 ${matchingTemplate.name}，但不自动设置框架，避免覆盖用户意图`);
+      logs.push(
+        `⚠️ 找到匹配模板 ${matchingTemplate.name}，但不自动设置框架，避免覆盖用户意图`
+      );
       // defaultTemplate = matchingTemplate;
       // logs.push(`📦 找到匹配模板: ${matchingTemplate.name}`);
     }
@@ -249,201 +242,9 @@ export function injectExtraTools(
     return { files, packageJson };
   }
 
-  console.log(`🔧 注入额外工具: ${extraTools.join(", ")}`);
-
-  const updatedFiles = { ...files };
-  const updatedPackageJson = { ...packageJson };
-
-  // 确保 devDependencies 存在
-  if (!updatedPackageJson.devDependencies) {
-    updatedPackageJson.devDependencies = {};
-  }
-
-  // 确保 scripts 存在
-  if (!updatedPackageJson.scripts) {
-    updatedPackageJson.scripts = {};
-  }
-
-  for (const tool of extraTools) {
-    switch (tool.toLowerCase()) {
-      case "eslint":
-        console.log(`   - 添加 ESLint 配置`);
-        updatedPackageJson.devDependencies["eslint"] = "^8.0.0";
-        updatedPackageJson.devDependencies["@typescript-eslint/eslint-plugin"] =
-          "^6.0.0";
-        updatedPackageJson.devDependencies["@typescript-eslint/parser"] =
-          "^6.0.0";
-        updatedPackageJson.scripts["lint"] = "eslint . --ext .ts,.tsx,.js,.jsx";
-        updatedPackageJson.scripts["lint:fix"] =
-          "eslint . --ext .ts,.tsx,.js,.jsx --fix";
-
-        // 添加 ESLint 配置文件
-        updatedFiles[".eslintrc.json"] = JSON.stringify(
-          {
-            extends: ["eslint:recommended", "@typescript-eslint/recommended"],
-            parser: "@typescript-eslint/parser",
-            plugins: ["@typescript-eslint"],
-            root: true,
-            env: {
-              node: true,
-              browser: true,
-            },
-            rules: {
-              "@typescript-eslint/no-unused-vars": "warn",
-              "@typescript-eslint/no-explicit-any": "warn",
-            },
-          },
-          null,
-          2
-        );
-        break;
-
-      case "prettier":
-        console.log(`   - 添加 Prettier 配置`);
-        updatedPackageJson.devDependencies["prettier"] = "^3.0.0";
-        updatedPackageJson.scripts["format"] = "prettier --write .";
-        updatedPackageJson.scripts["format:check"] = "prettier --check .";
-
-        // 添加 Prettier 配置文件
-        updatedFiles[".prettierrc"] = JSON.stringify(
-          {
-            semi: true,
-            trailingComma: "es5",
-            singleQuote: true,
-            printWidth: 80,
-            tabWidth: 2,
-          },
-          null,
-          2
-        );
-
-        updatedFiles[".prettierignore"] = `node_modules/
-dist/
-build/
-*.min.js
-*.min.css`;
-        break;
-
-      case "jest":
-        console.log(`   - 添加 Jest 测试框架`);
-        updatedPackageJson.devDependencies["jest"] = "^29.0.0";
-        updatedPackageJson.devDependencies["@types/jest"] = "^29.0.0";
-        updatedPackageJson.devDependencies["ts-jest"] = "^29.0.0";
-        updatedPackageJson.scripts["test"] = "jest";
-        updatedPackageJson.scripts["test:watch"] = "jest --watch";
-        updatedPackageJson.scripts["test:coverage"] = "jest --coverage";
-
-        // 添加 Jest 配置文件
-        updatedFiles["jest.config.js"] = `module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-  ],
-};`;
-        break;
-
-      case "husky":
-        console.log(`   - 添加 Husky Git hooks`);
-        updatedPackageJson.devDependencies["husky"] = "^8.0.0";
-        updatedPackageJson.devDependencies["lint-staged"] = "^13.0.0";
-        updatedPackageJson.scripts["prepare"] = "husky install";
-
-        // 添加 lint-staged 配置
-        updatedPackageJson["lint-staged"] = {
-          "*.{ts,tsx,js,jsx}": ["eslint --fix", "prettier --write"],
-          "*.{json,md}": ["prettier --write"],
-        };
-
-        // 添加 pre-commit hook
-        updatedFiles[".husky/pre-commit"] = `#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npx lint-staged`;
-        break;
-
-      case "commitlint":
-        console.log(`   - 添加 Commitlint 配置`);
-        updatedPackageJson.devDependencies["@commitlint/cli"] = "^17.0.0";
-        updatedPackageJson.devDependencies["@commitlint/config-conventional"] =
-          "^17.0.0";
-
-        // 添加 commitlint 配置文件
-        updatedFiles["commitlint.config.js"] = `module.exports = {
-  extends: ['@commitlint/config-conventional'],
-  rules: {
-    'type-enum': [
-      2,
-      'always',
-      [
-        'feat',
-        'fix',
-        'docs',
-        'style',
-        'refactor',
-        'perf',
-        'test',
-        'chore',
-        'revert'
-      ]
-    ]
-  }
-};`;
-
-        // 添加 commit-msg hook
-        updatedFiles[".husky/commit-msg"] = `#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npx --no -- commitlint --edit $1`;
-        break;
-
-      case "tailwindcss":
-        console.log(`   - 添加 Tailwind CSS`);
-        updatedPackageJson.devDependencies["tailwindcss"] = "^3.0.0";
-        updatedPackageJson.devDependencies["autoprefixer"] = "^10.0.0";
-        updatedPackageJson.devDependencies["postcss"] = "^8.0.0";
-
-        // 添加 Tailwind 配置文件
-        updatedFiles["tailwind.config.js"] =
-          `/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx,vue}",
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-}`;
-
-        updatedFiles["postcss.config.js"] = `module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-}`;
-
-        // 添加 Tailwind CSS 基础样式
-        updatedFiles["src/styles/tailwind.css"] = `@tailwind base;
-@tailwind components;
-@tailwind utilities;`;
-        break;
-
-      default:
-        console.log(`   - ⚠️  未知工具: ${tool}，跳过`);
-        break;
-    }
-  }
-
-  console.log(`✅ 额外工具注入完成`);
-  return { files: updatedFiles, packageJson: updatedPackageJson };
+  // 使用新的工具注入管理器
+  const injectorManager = new ToolInjectorManager();
+  return injectorManager.injectTools(files, packageJson, extraTools);
 }
 
 /**
@@ -601,7 +402,7 @@ export default {
         packageJson.devDependencies["html-webpack-plugin"] = "^5.0.0";
         packageJson.devDependencies["css-loader"] = "^6.0.0";
         packageJson.devDependencies["vue-style-loader"] = "^4.1.3";
-        
+
         packageJson.scripts = {
           dev: "webpack serve --mode development",
           build: "webpack --mode production",
@@ -610,7 +411,7 @@ export default {
         // 默认使用 Vite (Vue 2.7+ 支持)
         packageJson.devDependencies["@vitejs/plugin-vue2"] = "^2.0.0";
         packageJson.devDependencies["vite"] = "^4.0.0";
-        
+
         packageJson.scripts = {
           dev: "vite",
           build: "vite build",
@@ -904,43 +705,47 @@ Thumbs.db
 /**
  * 生成模拟的目录树结构（用于 dry run 模式）
  */
-function generateMockDirectoryTree(projectName: string, files: Record<string, string>, packageJson: any): string {
+function generateMockDirectoryTree(
+  projectName: string,
+  files: Record<string, string>,
+  packageJson: any
+): string {
   const tree: string[] = [];
   tree.push(`${projectName}/`);
-  
+
   // 添加 package.json
   tree.push(`├── package.json`);
-  
+
   // 按目录分组文件
   const filesByDir: Record<string, string[]> = {};
   for (const filePath of Object.keys(files)) {
     const dir = path.dirname(filePath);
-    const dirKey = dir || '.';
+    const dirKey = dir || ".";
     if (!filesByDir[dirKey]) {
       filesByDir[dirKey] = [];
     }
     filesByDir[dirKey].push(path.basename(filePath));
   }
-  
+
   // 生成目录结构
   const dirs = Object.keys(filesByDir).sort();
   for (let i = 0; i < dirs.length; i++) {
     const dir = dirs[i];
     if (!dir) continue;
-    
+
     const isLastDir = i === dirs.length - 1;
-    
-    if (dir !== '.') {
-      tree.push(`${isLastDir ? '└──' : '├──'} ${dir}/`);
-      
+
+    if (dir !== ".") {
+      tree.push(`${isLastDir ? "└──" : "├──"} ${dir}/`);
+
       const filesInDir = filesByDir[dir];
       if (filesInDir) {
         filesInDir.sort();
         for (let j = 0; j < filesInDir.length; j++) {
           const file = filesInDir[j];
           const isLastFile = j === filesInDir.length - 1;
-          const prefix = isLastDir ? '    ' : '│   ';
-          tree.push(`${prefix}${isLastFile ? '└──' : '├──'} ${file}`);
+          const prefix = isLastDir ? "    " : "│   ";
+          tree.push(`${prefix}${isLastFile ? "└──" : "├──"} ${file}`);
         }
       }
     } else {
@@ -951,75 +756,90 @@ function generateMockDirectoryTree(projectName: string, files: Record<string, st
         for (let j = 0; j < filesInRoot.length; j++) {
           const file = filesInRoot[j];
           const isLastFile = j === filesInRoot.length - 1 && dirs.length === 1;
-          tree.push(`${isLastFile ? '└──' : '├──'} ${file}`);
+          tree.push(`${isLastFile ? "└──" : "├──"} ${file}`);
         }
       }
     }
   }
-  
-  return tree.join('\n');
+
+  return tree.join("\n");
 }
 
 /**
  * 生成模拟的文件摘要（用于 dry run 模式）
  */
-function generateMockFileSummary(files: Record<string, string>, packageJson: any, projectName: string): string[] {
+function generateMockFileSummary(
+  files: Record<string, string>,
+  packageJson: any,
+  projectName: string
+): string[] {
   const summaries: string[] = [];
-  
+
   // 添加 package.json 摘要
   const deps = Object.keys(packageJson.dependencies || {}).length;
   const devDeps = Object.keys(packageJson.devDependencies || {}).length;
-  summaries.push(`📄 package.json (预计大小) - 项目配置 (${deps} 个依赖, ${devDeps} 个开发依赖)`);
-  
+  summaries.push(
+    `📄 package.json (预计大小) - 项目配置 (${deps} 个依赖, ${devDeps} 个开发依赖)`
+  );
+
   // 统计目录数量
   const dirs = new Set<string>();
   for (const filePath of Object.keys(files)) {
     const dir = path.dirname(filePath);
-    if (dir !== '.') {
+    if (dir !== ".") {
       dirs.add(dir);
     }
   }
-  
+
   if (dirs.size > 0) {
     summaries.unshift(`📁 包含 ${dirs.size} 个子目录`);
   }
-  
+
   // 添加文件摘要
   let fileCount = 0;
   for (const [filePath, content] of Object.entries(files)) {
     if (fileCount >= 20) break; // 限制显示数量
-    
+
     const fileName = path.basename(filePath);
     const ext = path.extname(fileName).toLowerCase();
-    const lines = content.split('\n').length;
+    const lines = content.split("\n").length;
     const estimatedSize = content.length;
-    const sizeStr = estimatedSize > 1024 ? `${Math.round(estimatedSize / 1024)}KB` : `${estimatedSize}B`;
-    
-    let contentType = '';
-    if (['.ts', '.js', '.tsx', '.jsx'].includes(ext)) {
-      if (content.includes('export default') || content.includes('export {')) {
+    const sizeStr =
+      estimatedSize > 1024
+        ? `${Math.round(estimatedSize / 1024)}KB`
+        : `${estimatedSize}B`;
+
+    let contentType = "";
+    if ([".ts", ".js", ".tsx", ".jsx"].includes(ext)) {
+      if (content.includes("export default") || content.includes("export {")) {
         contentType = `${ext.slice(1).toUpperCase()} 模块 (${lines} 行)`;
-      } else if (content.includes('import React') || content.includes('from \'react\'')) {
+      } else if (
+        content.includes("import React") ||
+        content.includes("from 'react'")
+      ) {
         contentType = `React 组件 (${lines} 行)`;
-      } else if (content.includes('import Vue') || content.includes('from \'vue\'')) {
+      } else if (
+        content.includes("import Vue") ||
+        content.includes("from 'vue'")
+      ) {
         contentType = `Vue 组件 (${lines} 行)`;
       } else {
         contentType = `${ext.slice(1).toUpperCase()} 文件 (${lines} 行)`;
       }
-    } else if (ext === '.json') {
+    } else if (ext === ".json") {
       contentType = `JSON 配置文件`;
-    } else if (['.css', '.scss', '.less'].includes(ext)) {
+    } else if ([".css", ".scss", ".less"].includes(ext)) {
       contentType = `样式文件 (${lines} 行)`;
-    } else if (['.html'].includes(ext)) {
+    } else if ([".html"].includes(ext)) {
       contentType = `HTML 文件 (${lines} 行)`;
     } else {
-      contentType = `${ext ? ext.slice(1).toUpperCase() : '文本'} 文件 (${lines} 行)`;
+      contentType = `${ext ? ext.slice(1).toUpperCase() : "文本"} 文件 (${lines} 行)`;
     }
-    
+
     summaries.push(`📄 ${fileName} (预计${sizeStr}) - ${contentType}`);
     fileCount++;
   }
-  
+
   return summaries;
 }
 
@@ -1171,14 +991,18 @@ export async function generateProject(
 
       // 生成预期的目录树结构
       logs.push(`📊 生成预期目录结构...`);
-      directoryTree = generateMockDirectoryTree(projectName, files, packageJson);
+      directoryTree = generateMockDirectoryTree(
+        projectName,
+        files,
+        packageJson
+      );
       logs.push(`   - 预期目录树生成完成`);
-      
+
       // 生成预期的文件摘要
       logs.push(`📊 生成预期文件摘要...`);
       fileSummary = generateMockFileSummary(files, packageJson, projectName);
       logs.push(`   - 预期文件摘要生成完成`);
-      
+
       // 统计预期的文件数量
       finalFileCount = Object.keys(files).length + 1; // +1 for package.json
       logs.push(`   - 预期文件数量: ${finalFileCount}`);
@@ -1217,14 +1041,18 @@ ${dependencyList}`,
 
       // 生成预期的目录树结构
       logs.push(`📊 生成预期目录结构...`);
-      directoryTree = generateMockDirectoryTree(projectName, files, packageJson);
+      directoryTree = generateMockDirectoryTree(
+        projectName,
+        files,
+        packageJson
+      );
       logs.push(`   - 预期目录树生成完成`);
-      
+
       // 生成预期的文件摘要
       logs.push(`📊 生成预期文件摘要...`);
       fileSummary = generateMockFileSummary(files, packageJson, projectName);
       logs.push(`   - 预期文件摘要生成完成`);
-      
+
       // 统计预期的文件数量
       finalFileCount = Object.keys(files).length + 1; // +1 for package.json
       logs.push(`   - 预期文件数量: ${finalFileCount}`);
