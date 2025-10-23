@@ -12,6 +12,7 @@ import {
   type TemplateResult,
 } from "./templateDownloader.js";
 import { ToolInjectorManager } from "../core/injectors/ToolInjectorManager.js";
+import { CoreInjectorManager } from "../core/injectors/core/CoreInjectorManager.js";
 import {
   createProjectFiles,
   generateDirectoryTree,
@@ -57,6 +58,16 @@ export function matchFixedTemplate(
   techStack: TechStack,
   logs: string[] = []
 ): any | null {
+  logs.push(`🔍 匹配固定模板...`);
+  logs.push(`   - 框架: ${techStack.framework}`);
+  logs.push(`   - 构建工具: ${techStack.builder}`);
+  logs.push(`   - 语言: ${techStack.language}`);
+
+  console.log(`🔍 匹配固定模板...`);
+  console.log(`   - 框架: ${techStack.framework}`);
+  console.log(`   - 构建工具: ${techStack.builder}`);
+  console.log(`   - 语言: ${techStack.language}`);
+
   const template = FIXED_TEMPLATES.find(
     (t) =>
       t.framework === techStack.framework &&
@@ -232,474 +243,57 @@ function fillDefaultValues(
 /**
  * 注入额外工具到项目
  */
-export function injectExtraTools(
-  files: Record<string, string>,
-  packageJson: any,
-  extraTools: string[]
-): { files: Record<string, string>; packageJson: any } {
-  if (!extraTools || extraTools.length === 0) {
-    console.log(`⏭️  没有额外工具需要注入`);
-    return { files, packageJson };
-  }
 
-  // 使用新的工具注入管理器
-  const injectorManager = new ToolInjectorManager();
-  return injectorManager.injectTools(files, packageJson, extraTools);
-}
+
 
 /**
- * 生成非固定模板项目
+ * 从非固定模板生成项目
+ * 使用 CoreInjectorManager 生成核心项目结构
  */
-export function generateFromNonFixedTemplate(
+export async function generateFromNonFixedTemplate(
   techStack: TechStack,
   projectName: string,
   logs: string[] = []
-): TemplateResult {
-  logs.push(`🔧 生成非固定模板项目`);
+): Promise<TemplateResult> {
+  logs.push(`🔧 使用 CoreInjectorManager 生成项目`);
   logs.push(`   - 项目名称: ${projectName}`);
   logs.push(`   - 技术栈: ${JSON.stringify(techStack)}`);
-  console.log(`🔧 生成非固定模板项目`);
+  console.log(`🔧 使用 CoreInjectorManager 生成项目`);
   console.log(`   - 项目名称: ${projectName}`);
   console.log(`   - 技术栈: ${JSON.stringify(techStack)}`);
 
-  const files: Record<string, string> = {};
-  let packageJson: any = {
-    name: projectName,
-    version: "1.0.0",
-    description: `基于 ${techStack.framework} 的项目`,
-    scripts: {},
-    dependencies: {},
-    devDependencies: {},
-  };
+  try {
+    // 使用 CoreInjectorManager 生成项目
+    const coreInjectorManager = new CoreInjectorManager();
+    const result = await coreInjectorManager.generateCoreStructure(techStack, projectName);
 
-  // 根据框架生成基础文件
-  switch (techStack.framework) {
-    case "vue3":
-      logs.push(`   - 生成 Vue 3 项目结构`);
-      console.log(`   - 生成 Vue 3 项目结构`);
+    logs.push(`✅ CoreInjectorManager 生成完成`);
+    logs.push(`   - 生成文件数: ${Object.keys(result.files).length}`);
+    logs.push(`   - 依赖数量: ${Object.keys(result.packageJson.dependencies || {}).length}`);
+    logs.push(`   - 开发依赖数量: ${Object.keys(result.packageJson.devDependencies || {}).length}`);
+    
+    console.log(`✅ CoreInjectorManager 生成完成`);
+    console.log(`   - 生成文件数: ${Object.keys(result.files).length}`);
+    console.log(`   - 依赖数量: ${Object.keys(result.packageJson.dependencies || {}).length}`);
+    console.log(`   - 开发依赖数量: ${Object.keys(result.packageJson.devDependencies || {}).length}`);
 
-      // 主入口文件
-      files["src/main.ts"] = `import { createApp } from 'vue'
-import App from './App.vue'
+    // 合并处理日志
+    const allLogs = [...logs, ...result.logs];
 
-const app = createApp(App)
-app.mount('#app')`;
-
-      // App 组件
-      files["src/App.vue"] = `<template>
-  <div id="app">
-    <h1>{{ title }}</h1>
-    <p>欢迎使用 Vue 3 项目！</p>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-
-const title = ref('${projectName}')
-</script>
-
-<style scoped>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>`;
-
-      // HTML 模板
-      files["index.html"] = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${projectName}</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
-</html>`;
-
-      // 依赖配置
-      packageJson.dependencies["vue"] = "^3.3.0";
-      packageJson.devDependencies["@vitejs/plugin-vue"] = "^4.0.0";
-      packageJson.devDependencies["typescript"] = "^5.0.0";
-      packageJson.devDependencies["vite"] = "^4.0.0";
-
-      packageJson.scripts = {
-        dev: "vite",
-        build: "vite build",
-        preview: "vite preview",
-      };
-      break;
-
-    case "vue2":
-      logs.push(`   - 生成 Vue 2 项目结构`);
-      console.log(`   - 生成 Vue 2 项目结构`);
-
-      // 主入口文件
-      files["src/main.js"] = `import Vue from 'vue'
-import App from './App.vue'
-
-Vue.config.productionTip = false
-
-new Vue({
-  render: h => h(App),
-}).$mount('#app')`;
-
-      // App 组件
-      files["src/App.vue"] = `<template>
-  <div id="app">
-    <h1>{{ title }}</h1>
-    <p>欢迎使用 Vue 2 项目！</p>
-  </div>
-</template>
-
-<script>
-export default {
-  name: 'App',
-  data() {
     return {
-      title: '${projectName}'
-    }
+      files: result.files,
+      packageJson: result.packageJson,
+      processLogs: allLogs
+    };
+  } catch (error) {
+    const errorMessage = `❌ CoreInjectorManager 生成失败: ${error instanceof Error ? error.message : String(error)}`;
+    logs.push(errorMessage);
+    console.error(errorMessage);
+    console.error(error);
+    
+    // 如果 CoreInjectorManager 失败，抛出错误
+    throw new Error(`项目生成失败: ${error instanceof Error ? error.message : String(error)}`);
   }
-}
-</script>
-
-<style scoped>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>`;
-
-      // HTML 模板
-      files["index.html"] = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${projectName}</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script src="/src/main.js"></script>
-</body>
-</html>`;
-
-      // 依赖配置
-      packageJson.dependencies["vue"] = "^2.7.14";
-      if (techStack.builder === "webpack") {
-        packageJson.devDependencies["webpack"] = "^5.0.0";
-        packageJson.devDependencies["webpack-cli"] = "^5.0.0";
-        packageJson.devDependencies["webpack-dev-server"] = "^4.0.0";
-        packageJson.devDependencies["vue-loader"] = "^17.0.0";
-        packageJson.devDependencies["vue-template-compiler"] = "^2.7.14";
-        packageJson.devDependencies["html-webpack-plugin"] = "^5.0.0";
-        packageJson.devDependencies["css-loader"] = "^6.0.0";
-        packageJson.devDependencies["vue-style-loader"] = "^4.1.3";
-
-        packageJson.scripts = {
-          dev: "webpack serve --mode development",
-          build: "webpack --mode production",
-        };
-      } else {
-        // 默认使用 Vite (Vue 2.7+ 支持)
-        packageJson.devDependencies["@vitejs/plugin-vue2"] = "^2.0.0";
-        packageJson.devDependencies["vite"] = "^4.0.0";
-
-        packageJson.scripts = {
-          dev: "vite",
-          build: "vite build",
-          preview: "vite preview",
-        };
-      }
-      break;
-
-    case "react":
-      console.log(`   - 生成 React 项目结构`);
-
-      // 主入口文件
-      files["src/main.tsx"] = `import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)`;
-
-      // App 组件
-      files["src/App.tsx"] = `import React from 'react'
-import './App.css'
-
-function App() {
-  return (
-    <div className="App">
-      <h1>${projectName}</h1>
-      <p>欢迎使用 React 项目！</p>
-    </div>
-  )
-}
-
-export default App`;
-
-      // 样式文件
-      files["src/App.css"] = `.App {
-  text-align: center;
-  padding: 2rem;
-}
-
-.App h1 {
-  color: #2c3e50;
-  margin-bottom: 1rem;
-}`;
-
-      files["src/index.css"] = `body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}`;
-
-      // HTML 模板
-      files["index.html"] = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${projectName}</title>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-</html>`;
-
-      // 依赖配置
-      packageJson.dependencies["react"] = "^18.2.0";
-      packageJson.dependencies["react-dom"] = "^18.2.0";
-      packageJson.devDependencies["@types/react"] = "^18.2.0";
-      packageJson.devDependencies["@types/react-dom"] = "^18.2.0";
-      packageJson.devDependencies["@vitejs/plugin-react"] = "^4.0.0";
-      packageJson.devDependencies["typescript"] = "^5.0.0";
-      packageJson.devDependencies["vite"] = "^4.0.0";
-
-      packageJson.scripts = {
-        dev: "vite",
-        build: "vite build",
-        preview: "vite preview",
-      };
-      break;
-
-    default:
-      console.log(`   - 生成通用项目结构`);
-
-      files["src/index.ts"] = `// ${projectName} 项目入口文件
-console.log('Hello ${projectName}!');
-
-export default function main() {
-  console.log('项目启动成功！');
-}
-
-main();`;
-
-      packageJson.scripts = {
-        start: "node dist/index.js",
-        build: "tsc",
-        dev: "ts-node src/index.ts",
-      };
-
-      packageJson.devDependencies["typescript"] = "^5.0.0";
-      packageJson.devDependencies["ts-node"] = "^10.0.0";
-      packageJson.devDependencies["@types/node"] = "^20.0.0";
-      break;
-  }
-
-  // 添加构建工具配置
-  if (techStack.builder === "vite") {
-    console.log(`   - 添加 Vite 配置`);
-
-    let viteConfig = "";
-    if (techStack.framework === "vue3") {
-      viteConfig = `import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-
-export default defineConfig({
-  plugins: [vue()],
-  server: {
-    port: 3000,
-    open: true
-  },
-  build: {
-    outDir: 'dist'
-  }
-})`;
-    } else if (techStack.framework === "vue2") {
-      viteConfig = `import { defineConfig } from 'vite'
-import { createVuePlugin } from '@vitejs/plugin-vue2'
-
-export default defineConfig({
-  plugins: [createVuePlugin()],
-  server: {
-    port: 3000,
-    open: true
-  },
-  build: {
-    outDir: 'dist'
-  }
-})`;
-    } else if (techStack.framework === "react") {
-      viteConfig = `import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 3000,
-    open: true
-  },
-  build: {
-    outDir: 'dist'
-  }
-})`;
-    } else {
-      viteConfig = `import { defineConfig } from 'vite'
-
-export default defineConfig({
-  server: {
-    port: 3000,
-    open: true
-  },
-  build: {
-    outDir: 'dist'
-  }
-})`;
-    }
-
-    files["vite.config.ts"] = viteConfig;
-  }
-
-  // 添加 TypeScript 配置
-  if (techStack.language === "typescript") {
-    console.log(`   - 添加 TypeScript 配置`);
-
-    files["tsconfig.json"] = JSON.stringify(
-      {
-        compilerOptions: {
-          target: "ES2020",
-          useDefineForClassFields: true,
-          lib: ["ES2020", "DOM", "DOM.Iterable"],
-          module: "ESNext",
-          skipLibCheck: true,
-          moduleResolution: "bundler",
-          allowImportingTsExtensions: true,
-          resolveJsonModule: true,
-          isolatedModules: true,
-          noEmit: true,
-          jsx: techStack.framework === "react" ? "react-jsx" : "preserve",
-          strict: true,
-          noUnusedLocals: true,
-          noUnusedParameters: true,
-          noFallthroughCasesInSwitch: true,
-        },
-        include: ["src/**/*"],
-        references: [{ path: "./tsconfig.node.json" }],
-      },
-      null,
-      2
-    );
-
-    files["tsconfig.node.json"] = JSON.stringify(
-      {
-        compilerOptions: {
-          composite: true,
-          skipLibCheck: true,
-          module: "ESNext",
-          moduleResolution: "bundler",
-          allowSyntheticDefaultImports: true,
-        },
-        include: ["vite.config.ts"],
-      },
-      null,
-      2
-    );
-  }
-
-  // 添加通用文件
-  files["README.md"] = `# ${projectName}
-
-基于 ${techStack.framework} + ${techStack.builder} + ${techStack.language} 的项目。
-
-## 开发
-
-\`\`\`bash
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-
-# 构建项目
-npm run build
-\`\`\`
-
-## 项目结构
-
-\`\`\`
-${projectName}/
-├── src/           # 源代码目录
-├── dist/          # 构建输出目录
-├── package.json   # 项目配置
-└── README.md      # 项目说明
-\`\`\`
-`;
-
-  files[".gitignore"] = `# 依赖
-node_modules/
-.pnpm-store/
-
-# 构建输出
-dist/
-build/
-out/
-
-# 环境变量
-.env.local
-.env.*.local
-
-# 日志
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
-.vscode/
-.idea/
-
-# 操作系统
-.DS_Store
-Thumbs.db
-
-# 临时文件
-*.tmp
-*.temp
-.cache/`;
-
-  // 添加 .npmrc 配置文件
-  files[".npmrc"] = `registry=https://registry.npmmirror.com/`;
-
-  logs.push(`✅ 非固定模板项目生成完成`);
-  console.log(`✅ 非固定模板项目生成完成`);
-  return { files, packageJson, processLogs: logs };
 }
 
 /**
@@ -876,13 +470,6 @@ export async function generateProject(
     logs.push(`   - 额外工具: ${extraTools.join(", ") || "无"}`);
     logs.push(`   - 选项: ${JSON.stringify(options)}`);
 
-    console.log(`🚀 开始生成项目...`);
-    console.log(`   - 项目名称: ${projectName}`);
-    console.log(`   - 输出目录: ${outputDir}`);
-    console.log(`   - 技术栈: ${JSON.stringify(techStackInput)}`);
-    console.log(`   - 额外工具: ${extraTools.join(", ") || "无"}`);
-    console.log(`   - 选项: ${JSON.stringify(options)}`);
-
     // 1. 解析技术栈
     logs.push(`📋 解析技术栈...`);
     const techStack = parseTechStack(techStackInput);
@@ -957,7 +544,7 @@ export async function generateProject(
     } else {
       logs.push(`🔧 使用动态生成模板`);
       console.log(`🔧 使用动态生成模板`);
-      templateResult = generateFromNonFixedTemplate(
+      templateResult = await generateFromNonFixedTemplate(
         normalizedTechStack,
         projectName,
         logs
@@ -974,7 +561,9 @@ export async function generateProject(
       logs.push(`   - 无额外工具需要注入`);
     }
 
-    const { files, packageJson } = injectExtraTools(
+    // 使用 ToolInjectorManager 注入额外工具
+    const toolInjectorManager = new ToolInjectorManager();
+    const { files, packageJson } = toolInjectorManager.injectTools(
       templateResult.files,
       templateResult.packageJson,
       extraTools

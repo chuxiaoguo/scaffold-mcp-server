@@ -7,15 +7,16 @@ export function parseTechStack(techStack: string | string[]): TechStack {
   const result: TechStack = {};
 
   if (typeof techStack === "string") {
-    // 解析字符串格式，如 "vue3+ts+vite" 或 "react vite typescript"
+    // 解析字符串格式，如 "vue3+ts+vite" 或 "react vite typescript" 或 "vue2,webpack,element-ui"
     const parts = techStack
       .toLowerCase()
-      .split(/[+\-_\s]+/)
+      .split(/[+\-_\s,]+/)
       .filter((part) => part.trim());
 
     // 检查是否包含 electron，如果包含则优先处理
     const hasElectron = parts.includes("electron");
 
+    // 第一遍：先解析框架，确保框架信息在解析UI库之前就确定
     parts.forEach((part) => {
       switch (part) {
         case "vue3":
@@ -27,6 +28,22 @@ export function parseTechStack(techStack: string | string[]): TechStack {
           break;
         case "react":
           result.framework = "react";
+          break;
+        case "umi":
+        case "umijs":
+          result.framework = "react";
+          break;
+      }
+    });
+
+    // 第二遍：解析其他技术栈组件
+    parts.forEach((part) => {
+      switch (part) {
+        case "vue3":
+        case "vue":
+        case "vue2":
+        case "react":
+          // 框架已在第一遍处理
           break;
         case "ts":
         case "typescript":
@@ -50,7 +67,6 @@ export function parseTechStack(techStack: string | string[]): TechStack {
         case "umi":
         case "umijs":
           result.builder = "umi";
-          result.framework = "react";
           break;
         case "pinia":
           result.state = "pinia";
@@ -73,7 +89,11 @@ export function parseTechStack(techStack: string | string[]): TechStack {
           break;
         case "element":
         case "element-plus":
-          result.ui = "element-plus";
+          if (result.framework === "vue3" || !result.framework) {
+            result.ui = "element-plus";
+          } else if (result.framework === "vue2") {
+            result.ui = "element-ui";
+          }
           break;
         case "element-ui":
           result.ui = "element-ui";

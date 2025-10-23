@@ -5,6 +5,9 @@ import { JestInjector } from "./jestInjector.js";
 import { HuskyInjector } from "./huskyInjector.js";
 import { CommitlintInjector } from "./commitlintInjector.js";
 import { TailwindCSSInjector } from "./tailwindCSSInjector.js";
+import { WebpackInjector } from "./WebpackInjector.js";
+import { ElementUIInjector } from "./ElementUIInjector.js";
+import { BabelInjector } from "./BabelInjector.js";
 
 /**
  * 工具注入管理器
@@ -20,6 +23,9 @@ export class ToolInjectorManager {
     this.register(new HuskyInjector());
     this.register(new CommitlintInjector());
     this.register(new TailwindCSSInjector());
+    this.register(new WebpackInjector());
+    this.register(new ElementUIInjector());
+    this.register(new BabelInjector());
   }
 
   /**

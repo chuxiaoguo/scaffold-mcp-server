@@ -5,3 +5,6 @@ export { JestInjector } from "./jestInjector.js";
 export { HuskyInjector } from "./huskyInjector.js";
 export { CommitlintInjector } from "./commitlintInjector.js";
 export { TailwindCSSInjector } from "./tailwindCSSInjector.js";
+export { WebpackInjector } from "./WebpackInjector.js";
+export { ElementUIInjector } from "./ElementUIInjector.js";
+export { BabelInjector } from "./BabelInjector.js";
