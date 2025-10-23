@@ -1,0 +1,87 @@
+{
+  "categories": {
+    "frameworks": ["vue3", "vue2", "react", "angular"],
+    "builders": ["vite", "webpack", "electron-vite", "umi", "rollup", "parcel"],
+    "languages": ["typescript", "javascript"],
+    "ui": ["element-plus", "element-ui", "antd", "antd-vue", "vuetify", "quasar", "naive-ui"],
+    "styles": ["tailwindcss", "less", "sass", "scss", "stylus", "css"],
+    "state": ["pinia", "vuex", "redux", "zustand", "mobx", "recoil"],
+    "routers": ["vue-router", "react-router", "reach-router"],
+    "testing": ["jest", "vitest", "cypress", "playwright", "testing-library"],
+    "linting": ["eslint", "prettier", "stylelint"],
+    "tools": ["husky", "commitlint", "lint-staged", "conventional-changelog"]
+  },
+  "dependencies": {
+    "element-plus": {
+      "requires": ["vue3"],
+      "incompatible": ["vue2", "react"]
+    },
+    "element-ui": {
+      "requires": ["vue2"],
+      "incompatible": ["vue3", "react"]
+    },
+    "antd": {
+      "requires": ["react"],
+      "incompatible": ["vue2", "vue3"]
+    },
+    "antd-vue": {
+      "requires": ["vue3"],
+      "incompatible": ["vue2", "react"]
+    },
+    "pinia": {
+      "requires": ["vue3"],
+      "incompatible": ["vue2", "react"]
+    },
+    "vuex": {
+      "requires": ["vue2", "vue3"],
+      "incompatible": ["react"]
+    },
+    "redux": {
+      "requires": ["react"],
+      "incompatible": ["vue2", "vue3"]
+    },
+    "vue-router": {
+      "requires": ["vue2", "vue3"],
+      "incompatible": ["react"]
+    },
+    "react-router": {
+      "requires": ["react"],
+      "incompatible": ["vue2", "vue3"]
+    },
+    "tailwindcss": {
+      "requires": [],
+      "incompatible": []
+    }
+  },
+  "autoComplete": {
+    "vue3": {
+      "recommended": ["vue-router", "pinia"],
+      "optional": ["element-plus", "tailwindcss", "typescript"]
+    },
+    "vue2": {
+      "recommended": ["vue-router", "vuex"],
+      "optional": ["element-ui", "tailwindcss", "typescript"]
+    },
+    "react": {
+      "recommended": ["react-router", "redux"],
+      "optional": ["antd", "tailwindcss", "typescript"]
+    },
+    "vite": {
+      "recommended": ["typescript"],
+      "optional": ["tailwindcss", "eslint", "prettier"]
+    },
+    "webpack": {
+      "recommended": [],
+      "optional": ["typescript", "eslint", "prettier"]
+    }
+  },
+  "aliases": {
+    "ts": "typescript",
+    "js": "javascript",
+    "tw": "tailwindcss",
+    "tailwind": "tailwindcss",
+    "element": "element-plus",
+    "ant": "antd",
+    "router": "vue-router"
+  }
+}

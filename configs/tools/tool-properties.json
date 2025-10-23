@@ -1,0 +1,162 @@
+{
+  "tools": {
+    "vue3": {
+      "category": "frameworks",
+      "requiresInjection": false,
+      "isCore": true,
+      "priority": 100,
+      "description": "Vue.js 3.x framework"
+    },
+    "vue2": {
+      "category": "frameworks", 
+      "requiresInjection": false,
+      "isCore": true,
+      "priority": 100,
+      "description": "Vue.js 2.x framework"
+    },
+    "react": {
+      "category": "frameworks",
+      "requiresInjection": false,
+      "isCore": true,
+      "priority": 100,
+      "description": "React framework"
+    },
+    "vite": {
+      "category": "builders",
+      "requiresInjection": false,
+      "isCore": true,
+      "priority": 90,
+      "description": "Vite build tool"
+    },
+    "webpack": {
+      "category": "builders",
+      "requiresInjection": false,
+      "isCore": true,
+      "priority": 90,
+      "description": "Webpack build tool"
+    },
+    "electron-vite": {
+      "category": "builders",
+      "requiresInjection": false,
+      "isCore": true,
+      "priority": 90,
+      "description": "Electron with Vite"
+    },
+    "typescript": {
+      "category": "languages",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 80,
+      "description": "TypeScript language support",
+      "injectorClass": "TypeScriptInjector"
+    },
+    "element-plus": {
+      "category": "ui",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 70,
+      "description": "Element Plus UI library for Vue 3",
+      "injectorClass": "ElementPlusInjector"
+    },
+    "element-ui": {
+      "category": "ui",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 70,
+      "description": "Element UI library for Vue 2",
+      "injectorClass": "ElementUIInjector"
+    },
+    "antd": {
+      "category": "ui",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 70,
+      "description": "Ant Design for React",
+      "injectorClass": "AntdInjector"
+    },
+    "tailwindcss": {
+      "category": "styles",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 60,
+      "description": "Tailwind CSS utility framework",
+      "injectorClass": "TailwindCSSInjector"
+    },
+    "pinia": {
+      "category": "state",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 50,
+      "description": "Pinia state management for Vue 3",
+      "injectorClass": "PiniaInjector"
+    },
+    "vuex": {
+      "category": "state",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 50,
+      "description": "Vuex state management",
+      "injectorClass": "VuexInjector"
+    },
+    "vue-router": {
+      "category": "routers",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 50,
+      "description": "Vue Router",
+      "injectorClass": "VueRouterInjector"
+    },
+    "react-router": {
+      "category": "routers",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 50,
+      "description": "React Router",
+      "injectorClass": "ReactRouterInjector"
+    },
+    "eslint": {
+      "category": "linting",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 30,
+      "description": "ESLint code linting",
+      "injectorClass": "ESLintInjector"
+    },
+    "prettier": {
+      "category": "linting",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 30,
+      "description": "Prettier code formatting",
+      "injectorClass": "PrettierInjector"
+    },
+    "jest": {
+      "category": "testing",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 20,
+      "description": "Jest testing framework",
+      "injectorClass": "JestInjector"
+    },
+    "vitest": {
+      "category": "testing",
+      "requiresInjection": true,
+      "isCore": false,
+      "priority": 20,
+      "description": "Vitest testing framework",
+      "injectorClass": "VitestInjector"
+    }
+  },
+  "injectionOrder": [
+    "frameworks",
+    "builders", 
+    "languages",
+    "routers",
+    "state",
+    "ui",
+    "styles",
+    "linting",
+    "testing",
+    "tools"
+  ]
+}
