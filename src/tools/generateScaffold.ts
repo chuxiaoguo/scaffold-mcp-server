@@ -204,9 +204,8 @@ export async function generateScaffold(
       templates,
       {
         enableKeywordMatch: true,
-        minScore: 30,
-        fallbackToDefault: true,
-        defaultTemplate: "vue3-vite-typescript",
+        minScore: 40,
+        fallbackToDefault: false,
       }
     );
 
@@ -228,7 +227,8 @@ export async function generateScaffold(
         `🔧 使用模板: ${matchedTemplate.name} (${matchedTemplate.description})`
       );
     } else {
-      processLogs.push(`⚠️ 未找到合适的模板，将使用非固定模板生成`);
+      processLogs.push(`⚠️ 未找到合适的固定模板，将使用动态模板生成`);
+      processLogs.push(`   - 动态模板将根据技术栈自动生成项目结构`);
     }
 
     // 4. 使用重构后的项目生成器
