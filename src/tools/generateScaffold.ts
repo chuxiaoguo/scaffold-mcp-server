@@ -68,9 +68,6 @@ export async function generateScaffold(
       delete process.env.DRY_RUN;
     }
 
-    // 先解析路径和项目名称
-    const { projectPath, projectName } = resolveProjectPathAndName(params);
-
     // 0. 统一模板同步（替代原来的两个步骤）
     processLogs.push(`🔄 开始统一模板同步...`);
     const templateSync = getTemplateSync();
@@ -111,20 +108,24 @@ export async function generateScaffold(
 
     // 1. 智能路径解析
     processLogs.push(`📁 开始智能路径解析...`);
-    const pathInfo = getPathResolutionInfo(params);
+    const {
+      workspaceRoot,
+      userOutputDir,
+      userProjectName,
+      resolvedBasePath,
+      resolvedProjectPath: projectPath,
+      resolvedProjectName: projectName,
+      isAbsolutePath,
+      isValidWorkspace,
+    } = getPathResolutionInfo(params);
     processLogs.push(`📁 路径解析详情:`);
-    processLogs.push(`   - 工作空间根目录: ${pathInfo.workspaceRoot}`);
-    processLogs.push(
-      `   - 用户指定输出目录: ${pathInfo.userOutputDir || "未指定"}`
-    );
-    processLogs.push(
-      `   - 用户指定项目名称: ${pathInfo.userProjectName || "未指定"}`
-    );
-    processLogs.push(`   - 解析后基础路径: ${pathInfo.resolvedBasePath}`);
-    processLogs.push(`   - 解析后项目路径: ${pathInfo.resolvedProjectPath}`);
-    processLogs.push(`   - 解析后项目名称: ${pathInfo.resolvedProjectName}`);
-    processLogs.push(`   - 是否绝对路径: ${pathInfo.isAbsolutePath}`);
-    processLogs.push(`   - 是否有效工作空间: ${pathInfo.isValidWorkspace}`);
+    processLogs.push(`   - 工作空间根目录: ${workspaceRoot}`);
+    processLogs.push(`   - 用户指定输出目录: ${userOutputDir || "未指定"}`);
+    processLogs.push(`   - 用户指定项目名称: ${userProjectName || "未指定"}`);
+    processLogs.push(`   - 解析后项目路径: ${projectPath}`);
+    processLogs.push(`   - 解析后项目名称: ${projectName}`);
+    processLogs.push(`   - 是否绝对路径: ${isAbsolutePath}`);
+    processLogs.push(`   - 是否有效工作空间: ${isValidWorkspace}`);
 
     // 2. 路径验证
     processLogs.push(`🔍 验证项目路径...`);

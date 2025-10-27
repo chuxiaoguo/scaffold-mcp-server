@@ -36,8 +36,7 @@
             "webpack"
           ],
           "language": [
-            "typescript",
-            "javascript"
+            "typescript"
           ]
         },
         "optional": {
@@ -50,8 +49,7 @@
             "css"
           ],
           "state": [
-            "redux",
-            "zustand"
+            "redux"
           ],
           "router": [
             "react-router"
