@@ -1,6 +1,12 @@
-import { UnifiedProjectGenerator, UnifiedToolInput, UnifiedGenerateOptions, UnifiedGenerateResult } from './UnifiedProjectGenerator.js';
-import { TechStack, GenerateOptions } from '../types/index.js';
-import { parseTechStack } from '../tools/techStackParser.js';
+import {
+  UnifiedProjectGenerator,
+  UnifiedToolInput,
+  UnifiedGenerateOptions,
+  UnifiedGenerateResult,
+} from "./UnifiedProjectGenerator.js";
+import { TechStack, GenerateOptions } from "../types/index.js";
+import { parseTechStack, techStackToArray, normalizeTechStack } from "./matcher.js";
+import { type MatchResult } from "./matcher/SmartMatcher.js";
 
 /**
  * 向后兼容适配器
@@ -11,6 +17,61 @@ export class BackwardCompatibilityAdapter {
 
   constructor() {
     this.unifiedGenerator = new UnifiedProjectGenerator();
+  }
+
+  /**
+   * 使用预匹配模板生成项目（避免重复匹配）
+   * 专门为 generateScaffold.ts 提供的优化方法
+   */
+  async generateProjectWithMatchedTemplate(
+    matchResult: MatchResult,
+    techStackInput: string | string[],
+    projectName: string = "my-project",
+    outputDir: string = ".",
+    extraTools: string[] = [],
+    options: {
+      dryRun?: boolean;
+      force?: boolean;
+    } = {}
+  ): Promise<{
+    success: boolean;
+    message: string;
+    projectPath?: string;
+    directoryTree?: string;
+    fileSummary?: string[];
+    processLogs?: string[];
+  }> {
+    try {
+      // 1. 转换技术栈输入为统一格式
+      const techStack = parseTechStack(techStackInput);
+      const unifiedInput = this.convertToUnifiedInput(techStack, extraTools);
+
+      // 2. 转换选项为统一格式
+      const unifiedOptions: UnifiedGenerateOptions = {
+        projectName,
+        outputDir,
+        preview: options.dryRun || false,
+        force: options.force || false,
+      };
+
+      // 3. 调用统一生成器的预匹配方法（跳过重复匹配）
+      const result = await this.unifiedGenerator.generateWithMatchedTemplate(
+        matchResult,
+        unifiedInput,
+        unifiedOptions
+      );
+
+      // 4. 转换结果为旧格式
+      return this.convertToLegacyResult(result, techStack);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        message: `项目生成失败: ${errorMessage}`,
+        processLogs: [`❌ 项目生成失败: ${errorMessage}`],
+      };
+    }
   }
 
   /**
@@ -44,21 +105,24 @@ export class BackwardCompatibilityAdapter {
         projectName,
         outputDir,
         preview: options.dryRun || false,
-        force: options.force || false
+        force: options.force || false,
       };
 
-      // 3. 调用统一生成器
-      const result = await this.unifiedGenerator.generateProject(unifiedInput, unifiedOptions);
+      // 3. 调用统一生成器（使用纯动态生成分支，避免重复策略选择）
+      const result = await this.unifiedGenerator.generateWithDynamicTemplate(
+        unifiedInput,
+        unifiedOptions
+      );
 
       // 4. 转换结果为旧格式
       return this.convertToLegacyResult(result, techStack);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         success: false,
         message: `项目生成失败: ${errorMessage}`,
-        processLogs: [`❌ 项目生成失败: ${errorMessage}`]
+        processLogs: [`❌ 项目生成失败: ${errorMessage}`],
       };
     }
   }
@@ -66,7 +130,10 @@ export class BackwardCompatibilityAdapter {
   /**
    * 将 TechStack 和额外工具转换为统一输入格式
    */
-  private convertToUnifiedInput(techStack: TechStack, extraTools: string[]): UnifiedToolInput {
+  private convertToUnifiedInput(
+    techStack: TechStack,
+    extraTools: string[]
+  ): UnifiedToolInput {
     const tools: string[] = [];
 
     // 添加核心技术栈工具
@@ -89,7 +156,7 @@ export class BackwardCompatibilityAdapter {
    * 将统一结果转换为旧格式
    */
   private convertToLegacyResult(
-    result: UnifiedGenerateResult, 
+    result: UnifiedGenerateResult,
     techStack: TechStack
   ): {
     success: boolean;
@@ -102,8 +169,8 @@ export class BackwardCompatibilityAdapter {
     if (!result.success) {
       return {
         success: false,
-        message: result.error || '项目生成失败',
-        processLogs: result.logs
+        message: result.error || "项目生成失败",
+        processLogs: result.logs,
       };
     }
 
@@ -125,7 +192,7 @@ export class BackwardCompatibilityAdapter {
       projectPath: result.targetPath,
       directoryTree: this.generateDirectoryTree(result.files),
       fileSummary: Object.keys(result.files),
-      processLogs: result.logs
+      processLogs: result.logs,
     };
   }
 
@@ -134,7 +201,7 @@ export class BackwardCompatibilityAdapter {
    */
   private getTechStackArray(techStack: TechStack): string[] {
     const stack: string[] = [];
-    
+
     if (techStack.framework) stack.push(techStack.framework);
     if (techStack.builder) stack.push(techStack.builder);
     if (techStack.language) stack.push(techStack.language);
@@ -155,13 +222,13 @@ export class BackwardCompatibilityAdapter {
     const processedDirs = new Set<string>();
 
     for (const filePath of filePaths) {
-      const parts = filePath.split('/');
-      
+      const parts = filePath.split("/");
+
       // 处理目录结构
       for (let i = 0; i < parts.length - 1; i++) {
-        const dirPath = parts.slice(0, i + 1).join('/');
+        const dirPath = parts.slice(0, i + 1).join("/");
         if (!processedDirs.has(dirPath)) {
-          const indent = '  '.repeat(i);
+          const indent = "  ".repeat(i);
           const dirName = parts[i];
           tree.push(`${indent}${dirName}/`);
           processedDirs.add(dirPath);
@@ -169,12 +236,12 @@ export class BackwardCompatibilityAdapter {
       }
 
       // 处理文件
-      const indent = '  '.repeat(parts.length - 1);
+      const indent = "  ".repeat(parts.length - 1);
       const fileName = parts[parts.length - 1];
       tree.push(`${indent}${fileName}`);
     }
 
-    return tree.join('\n');
+    return tree.join("\n");
   }
 
   /**
@@ -194,39 +261,14 @@ export class BackwardCompatibilityAdapter {
     try {
       const techStack = parseTechStack(techStackInput);
       const unifiedInput = this.convertToUnifiedInput(techStack, extraTools);
-      
+
       return this.unifiedGenerator.validateInput(unifiedInput);
     } catch (error) {
       return {
         valid: false,
-        errors: [error instanceof Error ? error.message : String(error)]
+        errors: [error instanceof Error ? error.message : String(error)],
       };
     }
-  }
-
-  /**
-   * 预览项目生成结果（兼容 dryRun 选项）
-   */
-  async previewProject(
-    techStackInput: string | string[],
-    projectName: string = "my-project",
-    outputDir: string = ".",
-    extraTools: string[] = []
-  ): Promise<{
-    success: boolean;
-    message: string;
-    projectPath?: string;
-    directoryTree?: string;
-    fileSummary?: string[];
-    processLogs?: string[];
-  }> {
-    return this.generateProject(
-      techStackInput,
-      projectName,
-      outputDir,
-      extraTools,
-      { dryRun: true }
-    );
   }
 }
 

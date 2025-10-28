@@ -40,6 +40,8 @@ const TECH_ALIASES: Record<string, string> = {
   "webpack.js": "webpack",
   "electron-vite": "electron-vite",
   electron: "electron",
+  umi: "umi",
+  umijs: "umi",
 
   // 语言别名
   ts: "typescript",
@@ -59,6 +61,7 @@ const TECH_ALIASES: Record<string, string> = {
   // UI库别名
   element: "element-plus",
   // 修正：element-ui 应该保持原样，不映射为 element-plus
+  "element-plus": "element-plus",
   "element-ui": "element-ui",
   el: "element-plus",
   antd: "antd",
@@ -75,6 +78,7 @@ const TECH_ALIASES: Record<string, string> = {
   // 包管理器别名
   yarn: "yarn",
   npm: "npm",
+  pnpm: "pnpm",
 };
 
 /**
@@ -91,11 +95,39 @@ export function parseTechStack(input: string | string[]): TechStack {
     const normalized = normalizeInput(item);
     const techs = extractTechnologies(normalized);
 
-    for (const tech of techs) {
-      const normalizedTech =
-        TECH_ALIASES[tech.toLowerCase()] || tech.toLowerCase();
-      assignTechToStack(techStack, normalizedTech);
+    // 将技术名称标准化
+    const normalizedTechs = techs.map(
+      (tech) => TECH_ALIASES[tech.toLowerCase()] || tech.toLowerCase()
+    );
+
+    // 检查是否包含 electron，用于特殊处理
+    const hasElectron =
+      normalizedTechs.includes("electron") ||
+      normalizedTechs.includes("electron-vite");
+
+    // 第一遍：先解析框架，确保框架信息在解析UI库之前就确定
+    for (const tech of normalizedTechs) {
+      assignFrameworkToStack(techStack, tech);
     }
+
+    // 第二遍：解析其他技术栈组件，此时框架已确定
+    for (const tech of normalizedTechs) {
+      assignTechToStack(techStack, tech, hasElectron, techStack.framework);
+    }
+  }
+
+  // 设置默认值 - 根据框架智能选择默认语言
+  if (!techStack.language) {
+    // Vue 2 默认使用 JavaScript（更简单，避免装饰器复杂性）
+    // Vue 3 和 React 默认使用 TypeScript（现代化开发）
+    if (techStack.framework === "vue2") {
+      techStack.language = "javascript";
+    } else {
+      techStack.language = "typescript";
+    }
+  }
+  if (!techStack.packageManager) {
+    techStack.packageManager = "npm";
   }
 
   return techStack;
@@ -228,19 +260,37 @@ function extractTechnologies(input: string): string[] {
 }
 
 /**
- * 将技术分配到技术栈对象
+ * 专门处理框架解析的函数
  */
-function assignTechToStack(techStack: TechStack, tech: string): void {
+function assignFrameworkToStack(techStack: TechStack, tech: string): void {
+  // 框架解析
+  if (["vue3", "vue2", "react"].includes(tech)) {
+    techStack.framework = tech as "vue3" | "vue2" | "react";
+  }
+  // umi 特殊处理
+  if (tech === "umi") {
+    techStack.framework = "react";
+  }
+}
+
+/**
+ * 将技术分配到技术栈对象（增强版）
+ */
+function assignTechToStack(
+  techStack: TechStack,
+  tech: string,
+  hasElectron: boolean = false,
+  framework?: string
+): void {
+  // 跳过框架，已在第一遍处理
+  if (["vue3", "vue2", "react", "umi"].includes(tech)) {
+    return;
+  }
+
   // 特殊处理：electron 作为构建工具时映射到 electron-vite，优先级最高
   if (tech === "electron") {
     techStack.builder = "electron-vite";
-    // 不再默认设置框架，让用户明确指定
     return; // 提前返回，避免被后续的 vite 覆盖
-  }
-
-  // 框架
-  if (["vue3", "vue2", "react"].includes(tech)) {
-    techStack.framework = tech as "vue3" | "vue2" | "react";
   }
 
   // 构建工具 - electron-vite 优先级最高，避免被普通 vite 覆盖
@@ -249,7 +299,12 @@ function assignTechToStack(techStack: TechStack, tech: string): void {
     if (techStack.builder === "electron-vite" && tech === "vite") {
       return;
     }
-    techStack.builder = tech as "vite" | "webpack" | "electron-vite" | "umi";
+    // 如果有 electron，vite 应该设置为 electron-vite
+    if (tech === "vite" && hasElectron) {
+      techStack.builder = "electron-vite";
+    } else {
+      techStack.builder = tech as "vite" | "webpack" | "electron-vite" | "umi";
+    }
   }
 
   // 语言
@@ -267,9 +322,22 @@ function assignTechToStack(techStack: TechStack, tech: string): void {
     techStack.state = tech as "pinia" | "vuex" | "redux" | "zustand";
   }
 
-  // UI库
+  // UI库 - 智能选择基于框架版本
   if (["element-plus", "element-ui", "antd", "antd-vue"].includes(tech)) {
-    techStack.ui = tech as "element-plus" | "element-ui" | "antd" | "antd-vue";
+    // 特殊处理 element，根据框架版本智能选择
+    if (tech === "element-plus" || tech === "element") {
+      if (framework === "vue3" || !framework) {
+        techStack.ui = "element-plus";
+      } else if (framework === "vue2") {
+        techStack.ui = "element-ui";
+      }
+    } else {
+      techStack.ui = tech as
+        | "element-plus"
+        | "element-ui"
+        | "antd"
+        | "antd-vue";
+    }
   }
 
   // 样式
@@ -281,6 +349,58 @@ function assignTechToStack(techStack: TechStack, tech: string): void {
   if (["pnpm", "npm", "yarn"].includes(tech)) {
     techStack.packageManager = tech as "pnpm" | "npm" | "yarn";
   }
+}
+
+/**
+ * 将技术栈转换为字符串数组格式
+ */
+export function techStackToArray(techStack: TechStack): string[] {
+  return [
+    techStack.framework,
+    techStack.builder,
+    techStack.language,
+    techStack.style,
+    techStack.ui,
+    techStack.state,
+    techStack.router,
+    techStack.packageManager,
+  ].filter(Boolean) as string[];
+}
+
+/**
+ * 处理 buildTool 参数映射到 builder
+ */
+export function normalizeTechStack(tech_stack: any): TechStack {
+  const techStack =
+    typeof tech_stack === "string" || Array.isArray(tech_stack)
+      ? parseTechStack(tech_stack)
+      : tech_stack;
+
+  // 处理 buildTool 参数映射到 builder
+  if (
+    typeof tech_stack === "object" &&
+    tech_stack !== null &&
+    !Array.isArray(tech_stack)
+  ) {
+    const objStack = tech_stack as any;
+    if (objStack.buildTool) {
+      techStack.builder = objStack.buildTool;
+    }
+    if (objStack.framework) {
+      techStack.framework = objStack.framework;
+    }
+    if (objStack.language) {
+      techStack.language = objStack.language;
+    }
+  }
+
+  // 确保 electron-vite 不会被错误地转换
+  // 如果是 electron-vite 构建器，自动推断框架
+  if (techStack.builder === "electron-vite" && !techStack.framework) {
+    techStack.framework = "vue3"; // electron-vite 默认使用 vue3
+  }
+
+  return techStack;
 }
 
 /**

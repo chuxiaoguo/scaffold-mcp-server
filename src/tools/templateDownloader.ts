@@ -81,7 +81,6 @@ async function readDirectoryRecursive(
 export async function generateFromFixedTemplate(
   template: any,
   projectName: string,
-  techStack: TechStack,
   logs: string[] = []
 ): Promise<TemplateResult> {
   logs.push(`🚀 开始使用本地模板: ${template.name}`);
@@ -91,7 +90,6 @@ export async function generateFromFixedTemplate(
   const localResult = await generateFromLocalTemplate(
     template,
     projectName,
-    techStack,
     logs
   );
 
@@ -104,7 +102,6 @@ export async function generateFromFixedTemplate(
 export async function generateFromLocalTemplate(
   template: any,
   projectName: string,
-  techStack: TechStack,
   logs: string[] = []
 ): Promise<TemplateResult> {
   logs.push(`🔍 开始本地模板路径计算:`);

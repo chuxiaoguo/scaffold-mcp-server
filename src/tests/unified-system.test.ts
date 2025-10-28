@@ -123,24 +123,6 @@ describe('统一项目生成系统测试', () => {
       expect(typeof categories).toBe('object');
       expect(Object.keys(categories).length).toBeGreaterThan(0);
     });
-
-    it('应该能够预览项目生成结果', async () => {
-      const toolInput = ['react', 'webpack', 'typescript'];
-      const options = {
-        projectName: 'preview-project',
-        outputDir: testOutputDir
-      };
-
-      const result = await unifiedGenerator.previewProject(toolInput, options);
-
-      expect(result.success).toBe(true);
-      expect(result.projectName).toBe('preview-project');
-      expect(result.files).toBeDefined();
-      expect(result.packageJson).toBeDefined();
-      // 预览模式不应该创建实际文件
-      const projectPath = path.join(testOutputDir, 'preview-project');
-      await expect(fs.access(projectPath)).rejects.toThrow();
-    });
   });
 
   describe('BackwardCompatibilityAdapter 测试', () => {
@@ -184,20 +166,6 @@ describe('统一项目生成系统测试', () => {
       const invalidResult = backwardAdapter.validateInput(['invalid-tool']);
       expect(invalidResult.valid).toBe(false);
       expect(invalidResult.errors.length).toBeGreaterThan(0);
-    });
-
-    it('应该能够预览项目生成结果', async () => {
-      const result = await backwardAdapter.previewProject(
-        ['vue3', 'vite', 'typescript'],
-        'preview-backward',
-        testOutputDir,
-        ['element-plus']
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.message).toContain('preview-backward');
-      expect(result.directoryTree).toBeDefined();
-      expect(result.fileSummary).toBeDefined();
     });
 
     it('应该能够获取统一生成器实例', () => {

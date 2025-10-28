@@ -5,14 +5,12 @@ import {
   parseTechStack,
   techStackToArray,
   normalizeTechStack,
-} from "./techStackParser.js";
+} from "../core/matcher.js";
 import {
   generateFromFixedTemplate,
   generateFromLocalTemplate,
   type TemplateResult,
 } from "./templateDownloader.js";
-import { ToolInjectorManager } from "../core/injectors/ToolInjectorManager.js";
-import { CoreInjectorManager } from "../core/injectors/core/CoreInjectorManager.js";
 import {
   createProjectFiles,
   generateDirectoryTree,
@@ -172,35 +170,18 @@ function fillDefaultValues(
 }
 
 /**
- * 从非固定模板生成项目
+ * 从非固定模板生成项目（已迁移到 dynamicGenerator.ts）
+ * @deprecated 请使用 dynamicGenerator.ts 中的 generateFromNonFixedTemplate
  */
 export async function generateFromNonFixedTemplate(
   techStack: TechStack,
   projectName: string,
   logs: string[] = []
 ): Promise<TemplateResult> {
-  logs.push(`🔧 使用动态生成模式...`);
-  console.log(`🔧 使用动态生成模式...`);
-
-  try {
-    // 使用核心注入器管理器生成项目结构
-    const coreInjectorManager = new CoreInjectorManager();
-    const result = await coreInjectorManager.generateCoreStructure(techStack, projectName);
-
-    logs.push(`✅ 动态生成完成`);
-    logs.push(`   - 文件数量: ${Object.keys(result.files).length}`);
-    console.log(`✅ 动态生成完成`);
-    console.log(`   - 文件数量: ${Object.keys(result.files).length}`);
-
-    return {
-      files: result.files,
-      packageJson: result.packageJson
-    };
-  } catch (error) {
-    logs.push(`❌ 动态生成失败: ${error}`);
-    console.error(`❌ 动态生成失败:`, error);
-    throw error;
-  }
+  // 导入并调用新的实现
+  const { generateFromNonFixedTemplate: newGenerateFromNonFixedTemplate } =
+    await import("./dynamicGenerator.js");
+  return newGenerateFromNonFixedTemplate(techStack, projectName, [], logs);
 }
 
 /**
@@ -221,13 +202,13 @@ function generateMockDirectoryTree(
   tree.push(`  package.json`);
 
   for (const filePath of filePaths) {
-    const parts = filePath.split('/');
-    
+    const parts = filePath.split("/");
+
     // 处理目录结构
     for (let i = 0; i < parts.length - 1; i++) {
-      const dirPath = parts.slice(0, i + 1).join('/');
+      const dirPath = parts.slice(0, i + 1).join("/");
       if (!processedDirs.has(dirPath)) {
-        const indent = '  '.repeat(i + 1);
+        const indent = "  ".repeat(i + 1);
         const dirName = parts[i];
         tree.push(`${indent}${dirName}/`);
         processedDirs.add(dirPath);
@@ -235,12 +216,12 @@ function generateMockDirectoryTree(
     }
 
     // 处理文件
-    const indent = '  '.repeat(parts.length);
+    const indent = "  ".repeat(parts.length);
     const fileName = parts[parts.length - 1];
     tree.push(`${indent}${fileName}`);
   }
 
-  return tree.join('\n');
+  return tree.join("\n");
 }
 
 /**
@@ -260,24 +241,24 @@ function generateMockFileSummary(
 
   for (const [filePath, content] of Object.entries(files)) {
     const fileName = path.basename(filePath);
-    const lines = content.split('\n').length;
+    const lines = content.split("\n").length;
     const sizeKB = Math.ceil(content.length / 1024);
     const sizeStr = sizeKB > 0 ? `${sizeKB}KB` : `${content.length}B`;
-    
+
     let contentType = "代码文件";
     const ext = path.extname(fileName);
-    
-    if (ext === '.md') {
+
+    if (ext === ".md") {
       contentType = "Markdown 文档";
-    } else if (ext === '.json') {
+    } else if (ext === ".json") {
       contentType = "JSON 配置";
-    } else if (['.js', '.ts', '.jsx', '.tsx'].includes(ext)) {
+    } else if ([".js", ".ts", ".jsx", ".tsx"].includes(ext)) {
       contentType = `${ext.slice(1).toUpperCase()} 代码文件`;
-    } else if (['.vue', '.svelte'].includes(ext)) {
+    } else if ([".vue", ".svelte"].includes(ext)) {
       contentType = `${ext.slice(1).toUpperCase()} 组件`;
-    } else if (['.css', '.scss', '.sass', '.less'].includes(ext)) {
+    } else if ([".css", ".scss", ".sass", ".less"].includes(ext)) {
       contentType = `${ext.slice(1).toUpperCase()} 样式文件`;
-    } else if (['.html', '.htm'].includes(ext)) {
+    } else if ([".html", ".htm"].includes(ext)) {
       contentType = "HTML 文件";
     } else {
       contentType = `${ext ? ext.slice(1).toUpperCase() : "文本"} 文件 (${lines} 行)`;
@@ -291,7 +272,7 @@ function generateMockFileSummary(
 }
 
 // 导入并重新导出向后兼容的 generateProject 函数
-import { generateProject as legacyGenerateProject } from '../core/BackwardCompatibilityAdapter.js';
+import { generateProject as legacyGenerateProject } from "../core/BackwardCompatibilityAdapter.js";
 
 /**
  * 兼容的 generateProject 函数

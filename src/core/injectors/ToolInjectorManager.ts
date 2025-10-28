@@ -8,6 +8,13 @@ import { TailwindCSSInjector } from "./tailwindCSSInjector.js";
 import { WebpackInjector } from "./WebpackInjector.js";
 import { ElementUIInjector } from "./ElementUIInjector.js";
 import { BabelInjector } from "./BabelInjector.js";
+import { ElementPlusInjector } from "./ElementPlusInjector.js";
+import { AntdInjector } from "./AntdInjector.js";
+import { PiniaInjector } from "./PiniaInjector.js";
+import { VuexInjector } from "./VuexInjector.js";
+import { VueRouterInjector } from "./VueRouterInjector.js";
+import { ReactRouterInjector } from "./ReactRouterInjector.js";
+import { VitestInjector } from "./VitestInjector.js";
 
 /**
  * 工具注入管理器
@@ -26,6 +33,14 @@ export class ToolInjectorManager {
     this.register(new WebpackInjector());
     this.register(new ElementUIInjector());
     this.register(new BabelInjector());
+    // 新增：根据配置补全缺失的工具注入器
+    this.register(new ElementPlusInjector());
+    this.register(new AntdInjector());
+    this.register(new PiniaInjector());
+    this.register(new VuexInjector());
+    this.register(new VueRouterInjector());
+    this.register(new ReactRouterInjector());
+    this.register(new VitestInjector());
   }
 
   /**

@@ -1,15 +1,8 @@
-import type {
-  GenerateScaffoldParams,
-  GenerateResult,
-  TechStack,
-} from "../types/index";
-import { smartMatchFixedTemplate, parseTechStack } from "../core/matcher.js";
-import {
-  SmartMatcher,
-  type MatchResult,
-} from "../core/matcher/SmartMatcher.js";
+import type { GenerateScaffoldParams, GenerateResult } from "../types/index";
+import { parseTechStack } from "../core/matcher.js";
+import { SmartMatcher } from "../core/matcher/SmartMatcher.js";
 import { getTemplateSync } from "../core/sync/TemplateSync.js";
-import { generateProject } from "./projectGenerator.js";
+import { UnifiedProjectGenerator } from "../core/UnifiedProjectGenerator.js";
 import {
   resolveProjectPathAndName,
   validateProjectPath,
@@ -92,27 +85,12 @@ export async function generateScaffold(
       console.warn("模板同步失败:", syncResult.error);
     }
 
-    // 获取同步后的配置
-    const syncedTemplateConfig = syncResult.config;
-    if (!syncedTemplateConfig) {
-      processLogs.push(`❌ 无法获取模板配置`);
-      return {
-        projectName,
-        targetPath: projectPath,
-        tree: { name: "config-error", type: "directory", path: projectPath },
-        files: [],
-        templateSource: `无法获取模板配置`,
-        processLogs,
-      };
-    }
-
     // 1. 智能路径解析
     processLogs.push(`📁 开始智能路径解析...`);
     const {
       workspaceRoot,
       userOutputDir,
       userProjectName,
-      resolvedBasePath,
       resolvedProjectPath: projectPath,
       resolvedProjectName: projectName,
       isAbsolutePath,
@@ -126,6 +104,20 @@ export async function generateScaffold(
     processLogs.push(`   - 解析后项目名称: ${projectName}`);
     processLogs.push(`   - 是否绝对路径: ${isAbsolutePath}`);
     processLogs.push(`   - 是否有效工作空间: ${isValidWorkspace}`);
+
+    // 获取同步后的配置
+    const syncedTemplateConfig = syncResult.config;
+    if (!syncedTemplateConfig) {
+      processLogs.push(`❌ 无法获取模板配置`);
+      return {
+        projectName,
+        targetPath: projectPath,
+        tree: { name: "config-error", type: "directory", path: projectPath },
+        files: [],
+        templateSource: `无法获取模板配置`,
+        processLogs,
+      };
+    }
 
     // 2. 路径验证
     processLogs.push(`🔍 验证项目路径...`);
@@ -174,7 +166,6 @@ export async function generateScaffold(
       : params.tech_stack;
 
     // 使用同步后的配置（移除重复的配置获取逻辑）
-    processLogs.push(`📚 使用已同步的模板配置`);
     const templatesObj = syncedTemplateConfig?.templates || {};
 
     // 将templates对象转换为数组
@@ -210,7 +201,11 @@ export async function generateScaffold(
       }
     );
 
+    // 4. 根据匹配结果选择生成方式
+    let result: any;
+
     if (matchResult) {
+      // 使用预匹配模板直接生成，避免重复匹配
       processLogs.push(`🎯 匹配成功!`);
       processLogs.push(`   - 模板名称: ${matchResult.template.name}`);
       processLogs.push(`   - 匹配类型: ${matchResult.matchType}`);
@@ -222,32 +217,85 @@ export async function generateScaffold(
         `   - 详细分数: 核心=${matchResult.score.coreScore}, 可选=${matchResult.score.optionalScore}, 关键词=${matchResult.score.keywordScore}, 优先级=${matchResult.score.priorityBonus}`
       );
 
-      // 使用匹配到的模板信息更新技术栈
-      const matchedTemplate = matchResult.template;
-      processLogs.push(
-        `🔧 使用模板: ${matchedTemplate.name} (${matchedTemplate.description})`
+      const unifiedGenerator = new UnifiedProjectGenerator();
+
+      // 将技术栈转换为工具输入格式
+      const toolInput = [
+        techStack.framework,
+        techStack.builder,
+        techStack.language,
+        techStack.ui,
+        techStack.style,
+        techStack.router,
+        techStack.state,
+        techStack.packageManager,
+        ...(params.extra_tools || []),
+      ].filter((tool): tool is string => Boolean(tool)); // 类型守卫，过滤掉 undefined
+
+      // 计算相对于项目路径的输出目录
+      const outputDir = path.dirname(projectPath);
+
+      const unifiedResult = await unifiedGenerator.generateWithMatchedTemplate(
+        matchResult,
+        toolInput,
+        {
+          projectName,
+          outputDir,
+          preview: params.options?.dryRun || false,
+          force: params.options?.force || false,
+        }
       );
+
+      // 转换统一生成器的结果为兼容格式
+      result = {
+        success: unifiedResult.success,
+        message: unifiedResult.success
+          ? "项目生成成功"
+          : unifiedResult.error || "项目生成失败",
+        projectPath: unifiedResult.targetPath,
+        processLogs: unifiedResult.logs,
+      };
     } else {
-      processLogs.push(`⚠️ 未找到合适的固定模板，将使用动态模板生成`);
-      processLogs.push(`   - 动态模板将根据技术栈自动生成项目结构`);
+      // 未找到匹配模板，使用纯动态生成逻辑
+      processLogs.push(`🔧 使用纯动态生成逻辑...`);
+      const unifiedGenerator = new UnifiedProjectGenerator();
+
+      // 将技术栈转换为工具输入格式
+      const toolInput = [
+        techStack.framework,
+        techStack.builder,
+        techStack.language,
+        techStack.ui,
+        techStack.style,
+        techStack.router,
+        techStack.state,
+        techStack.packageManager,
+        ...(params.extra_tools || []),
+      ].filter((tool): tool is string => Boolean(tool)); // 类型守卫，过滤掉 undefined
+
+      // 计算相对于项目路径的输出目录
+      const outputDir = path.dirname(projectPath);
+
+      const unifiedResult = await unifiedGenerator.generateWithDynamicTemplate(
+        toolInput,
+        {
+          projectName,
+          outputDir,
+          preview: params.options?.dryRun || false,
+          force: params.options?.force || false,
+        }
+      );
+
+      // 转换统一生成器的结果为兼容格式
+      result = {
+        success: unifiedResult.success,
+        message: unifiedResult.success
+          ? "动态项目生成成功"
+          : unifiedResult.error || "动态项目生成失败",
+        projectPath: unifiedResult.targetPath,
+        processLogs: unifiedResult.logs,
+      };
     }
-
-    // 4. 使用重构后的项目生成器
-    processLogs.push(`🔧 调用项目生成器...`);
-
-    // 计算相对于项目路径的输出目录
-    const outputDir = path.dirname(projectPath);
-
-    const result = await generateProject(
-      params.tech_stack,
-      projectName,
-      outputDir,
-      params.extra_tools || [],
-      {
-        dryRun: params.options?.dryRun || false,
-        force: params.options?.force || false,
-      }
-    );
 
     // 合并 generateProject 返回的详细日志
     if (result.processLogs && result.processLogs.length > 0) {
@@ -288,7 +336,11 @@ export async function generateScaffold(
         path: projectPath,
       },
       files: Array.isArray(result.fileSummary)
-        ? result.fileSummary.map((f) => ({ path: f, size: 0, type: "file" }))
+        ? result.fileSummary.map((f: string) => ({
+            path: f,
+            size: 0,
+            type: "file",
+          }))
         : [],
       templateSource: matchResult
         ? `智能匹配模板: ${matchResult.template.name} (${matchResult.matchType}匹配, 置信度${(matchResult.confidence * 100).toFixed(1)}%)`
