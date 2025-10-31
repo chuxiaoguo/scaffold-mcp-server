@@ -1,12 +1,13 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { ParsedToolSet } from './UnifiedToolParser.js';
+import * as path from "path";
+import * as fs from "fs";
+import { fileURLToPath } from "url";
+import { ParsedToolSet } from "./UnifiedToolParser.js";
 
 // 生成策略类型定义
 export interface GenerationStrategy {
   id: string;
   pattern: string[];
-  type: 'template' | 'dynamic';
+  type: "template" | "dynamic";
   template?: string;
   priority: number;
   description: string;
@@ -30,7 +31,7 @@ interface StrategyConfig {
 export interface StrategyMatch {
   strategy: GenerationStrategy;
   score: number;
-  matchType: 'exact' | 'partial' | 'wildcard';
+  matchType: "exact" | "partial" | "wildcard";
   matchedTools: string[];
   missingTools: string[];
   extraTools: string[];
@@ -41,7 +42,11 @@ export class StrategySelector {
   private configPath: string;
 
   constructor(configPath?: string) {
-    this.configPath = configPath || path.join(process.cwd(), 'configs', 'strategies');
+    // ES 模块中使用 import.meta.url 获取当前文件路径
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    this.configPath =
+      configPath || path.join(__dirname, "../../configs/strategies");
     this.loadConfiguration();
   }
 
@@ -50,10 +55,15 @@ export class StrategySelector {
    */
   private loadConfiguration(): void {
     try {
-      const configFile = path.join(this.configPath, 'generation-strategies.json');
-      this.config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+      const configFile = path.join(
+        this.configPath,
+        "generation-strategies.json"
+      );
+      this.config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
     } catch (error: any) {
-      throw new Error(`Failed to load strategy configuration: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to load strategy configuration: ${error?.message || "Unknown error"}`
+      );
     }
   }
 
@@ -62,9 +72,9 @@ export class StrategySelector {
    */
   public select(toolSet: ParsedToolSet): StrategyMatch {
     const matches = this.evaluateAllStrategies(toolSet);
-    
+
     if (matches.length === 0) {
-      throw new Error('No suitable generation strategy found');
+      throw new Error("No suitable generation strategy found");
     }
 
     // 按分数降序排序，选择最佳策略
@@ -105,41 +115,51 @@ export class StrategySelector {
   /**
    * 评估单个策略
    */
-  private evaluateStrategy(strategy: GenerationStrategy, toolSet: ParsedToolSet): StrategyMatch {
+  private evaluateStrategy(
+    strategy: GenerationStrategy,
+    toolSet: ParsedToolSet
+  ): StrategyMatch {
     const allTools = toolSet.all;
     const pattern = strategy.pattern;
 
     // 处理通配符模式
-    if (pattern.length === 1 && pattern[0] === '*') {
+    if (pattern.length === 1 && pattern[0] === "*") {
       return {
         strategy,
-        score: this.config.matchingRules.wildcardMatch.weight * strategy.priority / 100,
-        matchType: 'wildcard',
+        score:
+          (this.config.matchingRules.wildcardMatch.weight * strategy.priority) /
+          100,
+        matchType: "wildcard",
         matchedTools: allTools,
         missingTools: [],
-        extraTools: []
+        extraTools: [],
       };
     }
 
     // 计算匹配情况
-    const matchedTools = pattern.filter(tool => allTools.includes(tool));
-    const missingTools = pattern.filter(tool => !allTools.includes(tool));
-    const extraTools = allTools.filter(tool => !pattern.includes(tool));
+    const matchedTools = pattern.filter((tool) => allTools.includes(tool));
+    const missingTools = pattern.filter((tool) => !allTools.includes(tool));
+    const extraTools = allTools.filter((tool) => !pattern.includes(tool));
 
     // 计算匹配分数
     let score = 0;
-    let matchType: 'exact' | 'partial' | 'wildcard' = 'partial';
+    let matchType: "exact" | "partial" | "wildcard" = "partial";
 
     if (matchedTools.length === pattern.length && extraTools.length === 0) {
       // 完全匹配
-      score = this.config.matchingRules.exactMatch.weight * strategy.priority / 100;
-      matchType = 'exact';
+      score =
+        (this.config.matchingRules.exactMatch.weight * strategy.priority) / 100;
+      matchType = "exact";
     } else if (matchedTools.length > 0) {
       // 部分匹配
       const matchRatio = matchedTools.length / pattern.length;
       const extraPenalty = extraTools.length * 0.1; // 额外工具的惩罚
-      score = (this.config.matchingRules.partialMatch.weight * matchRatio - extraPenalty) * strategy.priority / 100;
-      matchType = 'partial';
+      score =
+        ((this.config.matchingRules.partialMatch.weight * matchRatio -
+          extraPenalty) *
+          strategy.priority) /
+        100;
+      matchType = "partial";
     }
 
     // 确保分数不为负数
@@ -151,14 +171,17 @@ export class StrategySelector {
       matchType,
       matchedTools,
       missingTools,
-      extraTools
+      extraTools,
     };
   }
 
   /**
    * 根据策略应用默认值
    */
-  public applyDefaults(strategy: GenerationStrategy, toolSet: ParsedToolSet): ParsedToolSet {
+  public applyDefaults(
+    strategy: GenerationStrategy,
+    toolSet: ParsedToolSet
+  ): ParsedToolSet {
     if (!strategy.defaults) {
       return toolSet;
     }
@@ -170,11 +193,13 @@ export class StrategySelector {
     for (const [category, defaultTool] of Object.entries(strategy.defaults)) {
       // 检查该分类是否已有工具
       const categoryTools = result[category as keyof ParsedToolSet] as string[];
-      
+
       if (!categoryTools || categoryTools.length === 0) {
         // 该分类没有工具，应用默认值
         if (Array.isArray(result[category as keyof ParsedToolSet])) {
-          (result[category as keyof ParsedToolSet] as string[]).push(defaultTool);
+          (result[category as keyof ParsedToolSet] as string[]).push(
+            defaultTool
+          );
           allTools.push(defaultTool);
         }
       }
@@ -188,12 +213,16 @@ export class StrategySelector {
    * 获取策略的模板路径
    */
   public getTemplatePath(strategy: GenerationStrategy): string | null {
-    if (strategy.type !== 'template' || !strategy.template) {
+    if (strategy.type !== "template" || !strategy.template) {
       return null;
     }
 
-    const templateName = this.config.templateMapping[strategy.template] || strategy.template;
-    return path.join(process.cwd(), 'scaffold-template', templateName);
+    const templateName =
+      this.config.templateMapping[strategy.template] || strategy.template;
+    // 使用 __dirname 基于当前文件位置找到项目根目录的 scaffold-template
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    return path.join(__dirname, "../../scaffold-template", templateName);
   }
 
   /**
@@ -206,7 +235,9 @@ export class StrategySelector {
     }
 
     try {
-      return fs.existsSync(templatePath) && fs.statSync(templatePath).isDirectory();
+      return (
+        fs.existsSync(templatePath) && fs.statSync(templatePath).isDirectory()
+      );
     } catch {
       return false;
     }
@@ -223,13 +254,16 @@ export class StrategySelector {
    * 获取核心工具类别（用于动态生成）
    */
   public getCoreToolCategories(strategy: GenerationStrategy): string[] {
-    return strategy.coreTools || ['frameworks', 'builders', 'languages'];
+    return strategy.coreTools || ["frameworks", "builders", "languages"];
   }
 
   /**
    * 生成策略执行计划
    */
-  public generateExecutionPlan(match: StrategyMatch, toolSet: ParsedToolSet): {
+  public generateExecutionPlan(
+    match: StrategyMatch,
+    toolSet: ParsedToolSet
+  ): {
     strategy: GenerationStrategy;
     templatePath?: string;
     coreTools: string[];
@@ -238,29 +272,33 @@ export class StrategySelector {
   } {
     const strategy = match.strategy;
     const templatePath = this.getTemplatePath(strategy);
-    
+
     // 获取核心工具和额外工具
     const coreCategories = this.getCoreToolCategories(strategy);
     const additionalCategories = this.getAdditionalToolCategories(strategy);
-    
+
     const coreTools: string[] = [];
     const additionalTools: string[] = [];
-    
+
     // 分类工具
     for (const tool of toolSet.all) {
       let isCore = false;
       for (const category of coreCategories) {
-        const categoryTools = toolSet[category as keyof ParsedToolSet] as string[];
+        const categoryTools = toolSet[
+          category as keyof ParsedToolSet
+        ] as string[];
         if (categoryTools && categoryTools.includes(tool)) {
           coreTools.push(tool);
           isCore = true;
           break;
         }
       }
-      
+
       if (!isCore) {
         for (const category of additionalCategories) {
-          const categoryTools = toolSet[category as keyof ParsedToolSet] as string[];
+          const categoryTools = toolSet[
+            category as keyof ParsedToolSet
+          ] as string[];
           if (categoryTools && categoryTools.includes(tool)) {
             additionalTools.push(tool);
             break;
@@ -271,22 +309,22 @@ export class StrategySelector {
 
     // 生成执行步骤
     const executionSteps: string[] = [];
-    
-    if (strategy.type === 'template') {
+
+    if (strategy.type === "template") {
       executionSteps.push(`使用模板: ${strategy.template}`);
       if (templatePath) {
         executionSteps.push(`模板路径: ${templatePath}`);
       }
       if (additionalTools.length > 0) {
-        executionSteps.push(`注入额外工具: ${additionalTools.join(', ')}`);
+        executionSteps.push(`注入额外工具: ${additionalTools.join(", ")}`);
       }
     } else {
-      executionSteps.push('动态生成项目结构');
+      executionSteps.push("动态生成项目结构");
       if (coreTools.length > 0) {
-        executionSteps.push(`核心工具: ${coreTools.join(', ')}`);
+        executionSteps.push(`核心工具: ${coreTools.join(", ")}`);
       }
       if (additionalTools.length > 0) {
-        executionSteps.push(`注入工具: ${additionalTools.join(', ')}`);
+        executionSteps.push(`注入工具: ${additionalTools.join(", ")}`);
       }
     }
 
@@ -295,7 +333,7 @@ export class StrategySelector {
       ...(templatePath && { templatePath }),
       coreTools,
       additionalTools,
-      executionSteps
+      executionSteps,
     };
   }
 
@@ -309,17 +347,21 @@ export class StrategySelector {
     availableTemplates: number;
   } {
     const totalStrategies = this.config.strategies.length;
-    const templateStrategies = this.config.strategies.filter(s => s.type === 'template').length;
-    const dynamicStrategies = this.config.strategies.filter(s => s.type === 'dynamic').length;
-    const availableTemplates = this.config.strategies.filter(s => 
-      s.type === 'template' && this.isTemplateAvailable(s)
+    const templateStrategies = this.config.strategies.filter(
+      (s) => s.type === "template"
+    ).length;
+    const dynamicStrategies = this.config.strategies.filter(
+      (s) => s.type === "dynamic"
+    ).length;
+    const availableTemplates = this.config.strategies.filter(
+      (s) => s.type === "template" && this.isTemplateAvailable(s)
     ).length;
 
     return {
       totalStrategies,
       templateStrategies,
       dynamicStrategies,
-      availableTemplates
+      availableTemplates,
     };
   }
 }

@@ -35,68 +35,6 @@
       "priority": 100,
       "description": "UmiJS template",
       "additionalTools": ["languages", "ui", "styles", "state", "linting", "testing", "tools"]
-    },
-    {
-      "id": "vue3-vite",
-      "pattern": ["vue3", "vite"],
-      "type": "template",
-      "template": "vue3-vite-typescript",
-      "priority": 90,
-      "description": "Vue 3 + Vite template (fallback to TypeScript template)",
-      "additionalTools": ["languages", "ui", "styles", "state", "routers", "linting", "testing", "tools"]
-    },
-    {
-      "id": "vue3-only",
-      "pattern": ["vue3"],
-      "type": "dynamic",
-      "priority": 80,
-      "description": "Vue 3 dynamic generation",
-      "coreTools": ["frameworks", "builders", "languages"],
-      "additionalTools": ["ui", "styles", "state", "routers", "linting", "testing", "tools"],
-      "defaults": {
-        "builder": "vite",
-        "language": "typescript"
-      }
-    },
-    {
-      "id": "react-only",
-      "pattern": ["react"],
-      "type": "dynamic", 
-      "priority": 80,
-      "description": "React dynamic generation",
-      "coreTools": ["frameworks", "builders", "languages"],
-      "additionalTools": ["ui", "styles", "state", "routers", "linting", "testing", "tools"],
-      "defaults": {
-        "builder": "vite",
-        "language": "typescript"
-      }
-    },
-    {
-      "id": "vue2-only",
-      "pattern": ["vue2"],
-      "type": "dynamic",
-      "priority": 80,
-      "description": "Vue 2 dynamic generation", 
-      "coreTools": ["frameworks", "builders", "languages"],
-      "additionalTools": ["ui", "styles", "state", "routers", "linting", "testing", "tools"],
-      "defaults": {
-        "builder": "webpack",
-        "language": "javascript"
-      }
-    },
-    {
-      "id": "default-dynamic",
-      "pattern": ["*"],
-      "type": "dynamic",
-      "priority": 1,
-      "description": "Default dynamic generation for any tool combination",
-      "coreTools": ["frameworks", "builders", "languages"],
-      "additionalTools": ["ui", "styles", "state", "routers", "linting", "testing", "tools"],
-      "defaults": {
-        "framework": "vue3",
-        "builder": "vite", 
-        "language": "typescript"
-      }
     }
   ],
   "matchingRules": {

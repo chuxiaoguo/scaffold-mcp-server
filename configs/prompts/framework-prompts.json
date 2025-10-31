@@ -1,0 +1,118 @@
+{
+  "vue3": {
+    "name": "Vue 3",
+    "description": "使用 Vue 3.4+ Composition API 和 <script setup> 语法糖",
+    "structure": {
+      "directories": [
+        "src/",
+        "src/components/",
+        "src/views/",
+        "src/router/",
+        "src/stores/",
+        "src/assets/",
+        "src/utils/"
+      ],
+      "description": "典型的 Vue 3 项目结构，分离组件、视图、路由和状态管理"
+    },
+    "entry": {
+      "file": "src/main.ts",
+      "description": "应用入口文件，使用 createApp 创建 Vue 应用实例"
+    },
+    "coreFiles": {
+      "src/App.vue": "根组件，使用 <script setup> 语法",
+      "src/main.ts": "入口文件，挂载 Vue 应用",
+      "index.html": "HTML 模板，包含 #app 挂载点"
+    },
+    "dependencies": {
+      "vue": "^3.4.0"
+    },
+    "devDependencies": {
+      "@vue/tsconfig": "^0.5.0",
+      "@vitejs/plugin-vue": "^5.0.0"
+    },
+    "bestPractices": [
+      "使用 Composition API 和 <script setup> 语法",
+      "组件采用单文件组件 (SFC) 格式",
+      "使用 ref 和 reactive 进行响应式数据管理",
+      "路由使用 vue-router 4.x",
+      "状态管理优先使用 Pinia"
+    ]
+  },
+  "react": {
+    "name": "React",
+    "description": "使用 React 18+ 和 Hooks，采用函数式组件",
+    "structure": {
+      "directories": [
+        "src/",
+        "src/components/",
+        "src/pages/",
+        "src/hooks/",
+        "src/utils/",
+        "src/assets/",
+        "src/styles/"
+      ],
+      "description": "标准 React 项目结构，区分页面和可复用组件"
+    },
+    "entry": {
+      "file": "src/main.tsx",
+      "description": "应用入口，使用 ReactDOM.createRoot 挂载应用"
+    },
+    "coreFiles": {
+      "src/App.tsx": "根组件，定义应用路由和布局",
+      "src/main.tsx": "入口文件，挂载 React 应用",
+      "index.html": "HTML 模板，包含根节点"
+    },
+    "dependencies": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+      "@types/react": "^18.2.0",
+      "@types/react-dom": "^18.2.0",
+      "@vitejs/plugin-react": "^4.2.0"
+    },
+    "bestPractices": [
+      "使用函数式组件和 Hooks",
+      "遵循 React Hooks 使用规则",
+      "使用 TypeScript 进行类型检查",
+      "路由使用 react-router-dom 6.x",
+      "状态管理可选 Redux Toolkit 或 Zustand"
+    ]
+  },
+  "vue2": {
+    "name": "Vue 2",
+    "description": "使用 Vue 2.7+ Options API",
+    "structure": {
+      "directories": [
+        "src/",
+        "src/components/",
+        "src/views/",
+        "src/router/",
+        "src/store/",
+        "src/assets/"
+      ],
+      "description": "Vue 2 标准项目结构"
+    },
+    "entry": {
+      "file": "src/main.js",
+      "description": "应用入口文件，new Vue() 创建实例"
+    },
+    "coreFiles": {
+      "src/App.vue": "根组件",
+      "src/main.js": "入口文件",
+      "index.html": "HTML 模板"
+    },
+    "dependencies": {
+      "vue": "^2.7.0"
+    },
+    "devDependencies": {
+      "vue-template-compiler": "^2.7.0"
+    },
+    "bestPractices": [
+      "使用 Options API",
+      "组件采用单文件组件格式",
+      "路由使用 vue-router 3.x",
+      "状态管理使用 Vuex 3.x"
+    ]
+  }
+}

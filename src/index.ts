@@ -76,7 +76,23 @@ class ScaffoldMCPServer {
     try {
       const result = await generateScaffold(params);
 
-      // 检查生成是否成功
+      // 检查是否是提示词模式（动态模板）
+      if (result.prompt) {
+        const promptMessage = MessageTemplates.renderPrompt({
+          projectName: result.projectName,
+          prompt: result.prompt,
+          processLogs: MessageTemplates.renderProcessLogs(
+            result.processLogs || []
+          ),
+        });
+
+        return {
+          content: [{ type: "text", text: promptMessage }],
+          isError: false,
+        };
+      }
+
+      // 检查生成是否成功（固定模板）
       if (ResponseFormatter.isFailureResult(result)) {
         const errorMessage = MessageTemplates.renderError({
           projectName: result.projectName,
@@ -100,7 +116,8 @@ class ScaffoldMCPServer {
         targetPath: result.targetPath,
         templateSource: result.templateSource || "未知",
         fileCount: result.files.length,
-        directoryTree: result.directoryTree || this.formatDirectoryTree(result.tree),
+        directoryTree:
+          result.directoryTree || this.formatDirectoryTree(result.tree),
         processLogs: MessageTemplates.renderProcessLogs(
           result.processLogs || []
         ),

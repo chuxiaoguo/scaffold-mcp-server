@@ -1,6 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { TechStack } from '../types/index.js';
+import * as path from "path";
+import * as fs from "fs";
+import { fileURLToPath } from "url";
+import { TechStack } from "../types/index.js";
 
 // 工具输入类型定义
 export type ToolInput = string | string[] | TechStack | { tools?: ToolInput };
@@ -20,7 +21,7 @@ export interface ParsedToolSet {
   all: string[];
   metadata: {
     originalInput: ToolInput;
-    inputFormat: 'string' | 'array' | 'object' | 'nested';
+    inputFormat: "string" | "array" | "object" | "nested";
     autoCompleted: string[];
     conflicts: string[];
     warnings: string[];
@@ -36,14 +37,17 @@ interface ToolCategories {
 }
 
 interface ToolProperties {
-  tools: Record<string, {
-    category: string;
-    requiresInjection: boolean;
-    isCore: boolean;
-    priority: number;
-    description: string;
-    injectorClass?: string;
-  }>;
+  tools: Record<
+    string,
+    {
+      category: string;
+      requiresInjection: boolean;
+      isCore: boolean;
+      priority: number;
+      description: string;
+      injectorClass?: string;
+    }
+  >;
   injectionOrder: string[];
 }
 
@@ -53,7 +57,10 @@ export class UnifiedToolParser {
   private configPath: string;
 
   constructor(configPath?: string) {
-    this.configPath = configPath || path.join(process.cwd(), 'configs', 'tools');
+    // ES 模块中使用 import.meta.url 获取当前文件路径
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    this.configPath = configPath || path.join(__dirname, "../../configs/tools");
     this.loadConfigurations();
   }
 
@@ -62,13 +69,19 @@ export class UnifiedToolParser {
    */
   private loadConfigurations(): void {
     try {
-      const categoriesPath = path.join(this.configPath, 'tool-categories.json');
-      const propertiesPath = path.join(this.configPath, 'tool-properties.json');
+      const categoriesPath = path.join(this.configPath, "tool-categories.json");
+      const propertiesPath = path.join(this.configPath, "tool-properties.json");
 
-      this.toolCategories = JSON.parse(fs.readFileSync(categoriesPath, 'utf-8'));
-      this.toolProperties = JSON.parse(fs.readFileSync(propertiesPath, 'utf-8'));
+      this.toolCategories = JSON.parse(
+        fs.readFileSync(categoriesPath, "utf-8")
+      );
+      this.toolProperties = JSON.parse(
+        fs.readFileSync(propertiesPath, "utf-8")
+      );
     } catch (error: any) {
-      throw new Error(`Failed to load tool configurations: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to load tool configurations: ${error?.message || "Unknown error"}`
+      );
     }
   }
 
@@ -78,19 +91,19 @@ export class UnifiedToolParser {
   public parse(input: ToolInput): ParsedToolSet {
     // 1. 格式标准化
     const normalized = this.normalizeInput(input);
-    
+
     // 2. 别名解析
     const resolved = this.resolveAliases(normalized);
-    
+
     // 3. 智能分类
     const categorized = this.categorizeTools(resolved);
-    
+
     // 4. 依赖推断和自动补全
     const completed = this.autoCompleteTools(categorized);
-    
+
     // 5. 兼容性验证
     const validated = this.validateCompatibility(completed);
-    
+
     // 6. 构建最终结果
     return this.buildResult(input, normalized, validated);
   }
@@ -98,28 +111,34 @@ export class UnifiedToolParser {
   /**
    * 输入格式标准化
    */
-  private normalizeInput(input: ToolInput): { tools: string[]; format: string } {
-    if (typeof input === 'string') {
+  private normalizeInput(input: ToolInput): {
+    tools: string[];
+    format: string;
+  } {
+    if (typeof input === "string") {
       // 字符串格式: "vue3+vite+typescript" 或 "vue3,vite,typescript"
-      const tools = input.split(/[+,\s]+/).filter(tool => tool.trim());
-      return { tools, format: 'string' };
+      const tools = input.split(/[+,\s]+/).filter((tool) => tool.trim());
+      return { tools, format: "string" };
     }
-    
+
     if (Array.isArray(input)) {
       // 数组格式: ["vue3", "vite", "typescript"]
-      return { tools: input.filter(tool => typeof tool === 'string'), format: 'array' };
+      return {
+        tools: input.filter((tool) => typeof tool === "string"),
+        format: "array",
+      };
     }
-    
-    if (input && typeof input === 'object') {
+
+    if (input && typeof input === "object") {
       // 检查是否是嵌套对象格式 { tools: [...] }
-      if ('tools' in input && input.tools) {
+      if ("tools" in input && input.tools) {
         return this.normalizeInput(input.tools);
       }
-      
+
       // 对象格式: { framework: "vue3", builder: "vite", ... }
       const tools: string[] = [];
       const techStack = input as TechStack;
-      
+
       if (techStack.framework) tools.push(techStack.framework);
       if (techStack.builder) tools.push(techStack.builder);
       if (techStack.language) tools.push(techStack.language);
@@ -127,18 +146,21 @@ export class UnifiedToolParser {
       if (techStack.style) tools.push(techStack.style);
       if (techStack.state) tools.push(techStack.state);
       if (techStack.router) tools.push(techStack.router);
-      
-      return { tools, format: 'object' };
+
+      return { tools, format: "object" };
     }
-    
-    return { tools: [], format: 'unknown' };
+
+    return { tools: [], format: "unknown" };
   }
 
   /**
    * 别名解析
    */
-  private resolveAliases(normalized: { tools: string[]; format: string }): string[] {
-    return normalized.tools.map(tool => {
+  private resolveAliases(normalized: {
+    tools: string[];
+    format: string;
+  }): string[] {
+    return normalized.tools.map((tool) => {
       const lowerTool = tool.toLowerCase();
       return this.toolCategories.aliases[lowerTool] || tool;
     });
@@ -158,14 +180,16 @@ export class UnifiedToolParser {
       routers: [],
       testing: [],
       linting: [],
-      tools: []
+      tools: [],
     };
 
     for (const tool of tools) {
       let found = false;
-      
+
       // 根据配置分类
-      for (const [category, categoryTools] of Object.entries(this.toolCategories.categories)) {
+      for (const [category, categoryTools] of Object.entries(
+        this.toolCategories.categories
+      )) {
         if (categoryTools.includes(tool)) {
           if (categorized[category]) {
             categorized[category].push(tool);
@@ -178,7 +202,7 @@ export class UnifiedToolParser {
           break;
         }
       }
-      
+
       // 未知工具放入 tools 分类
       if (!found) {
         // 确保 tools 数组存在
@@ -207,7 +231,10 @@ export class UnifiedToolParser {
         if (autoComplete) {
           // 添加推荐工具
           for (const recommended of autoComplete.recommended) {
-            if (!this.isToolPresent(recommended, result) && this.isToolCompatible(recommended, result)) {
+            if (
+              !this.isToolPresent(recommended, result) &&
+              this.isToolCompatible(recommended, result)
+            ) {
               this.addToolToCategory(recommended, result);
               autoCompleted.push(recommended);
             }
@@ -242,14 +269,18 @@ export class UnifiedToolParser {
         // 检查必需依赖
         for (const required of dependencies.requires) {
           if (!allTools.includes(required)) {
-            warnings.push(`Tool '${tool}' requires '${required}' but it's not present`);
+            warnings.push(
+              `Tool '${tool}' requires '${required}' but it's not present`
+            );
           }
         }
-        
+
         // 检查不兼容工具
         for (const incompatible of dependencies.incompatible) {
           if (allTools.includes(incompatible)) {
-            conflicts.push(`Tool '${tool}' is incompatible with '${incompatible}'`);
+            conflicts.push(
+              `Tool '${tool}' is incompatible with '${incompatible}'`
+            );
           }
         }
       }
@@ -258,7 +289,7 @@ export class UnifiedToolParser {
     return {
       ...data,
       conflicts,
-      warnings
+      warnings,
     };
   }
 
@@ -294,42 +325,53 @@ export class UnifiedToolParser {
         inputFormat: normalized.format as any,
         autoCompleted: validated.autoCompleted,
         conflicts: validated.conflicts,
-        warnings: validated.warnings
-      }
+        warnings: validated.warnings,
+      },
     };
   }
 
   /**
    * 辅助方法：检查工具是否已存在
    */
-  private isToolPresent(tool: string, categorized: Record<string, string[]>): boolean {
-    return Object.values(categorized).some(tools => tools.includes(tool));
+  private isToolPresent(
+    tool: string,
+    categorized: Record<string, string[]>
+  ): boolean {
+    return Object.values(categorized).some((tools) => tools.includes(tool));
   }
 
   /**
    * 辅助方法：检查工具兼容性
    */
-  private isToolCompatible(tool: string, categorized: Record<string, string[]>): boolean {
+  private isToolCompatible(
+    tool: string,
+    categorized: Record<string, string[]>
+  ): boolean {
     const dependencies = this.toolCategories.dependencies[tool];
     if (!dependencies) return true;
 
     const allTools = this.getAllTools(categorized);
-    
+
     // 检查不兼容工具
     for (const incompatible of dependencies.incompatible) {
       if (allTools.includes(incompatible)) {
         return false;
       }
     }
-    
+
     return true;
   }
 
   /**
    * 辅助方法：添加工具到对应分类
    */
-  private addToolToCategory(tool: string, categorized: Record<string, string[]>): void {
-    for (const [category, categoryTools] of Object.entries(this.toolCategories.categories)) {
+  private addToolToCategory(
+    tool: string,
+    categorized: Record<string, string[]>
+  ): void {
+    for (const [category, categoryTools] of Object.entries(
+      this.toolCategories.categories
+    )) {
       if (categoryTools.includes(tool)) {
         if (categorized[category]) {
           categorized[category].push(tool);
@@ -341,7 +383,7 @@ export class UnifiedToolParser {
         return;
       }
     }
-    
+
     // 未知工具添加到 tools 分类
     if (!categorized.tools) categorized.tools = [];
     categorized.tools.push(tool);
@@ -358,7 +400,7 @@ export class UnifiedToolParser {
    * 获取需要注入的工具
    */
   public getInjectableTools(toolSet: ParsedToolSet): string[] {
-    return toolSet.all.filter(tool => {
+    return toolSet.all.filter((tool) => {
       const properties = this.toolProperties.tools[tool];
       return properties && properties.requiresInjection;
     });

@@ -34,6 +34,7 @@ export interface GenerateResult {
   templateSource?: string; // 模板来源信息
   processLogs?: string[]; // 过程日志，用于排查问题（后续会移除）
   directoryTree?: string; // 目录树字符串表示，用于dry run模式
+  prompt?: string; // 动态生成时返回的提示词
 }
 
 export interface DirectoryTree {

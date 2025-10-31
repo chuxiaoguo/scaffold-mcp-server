@@ -1,0 +1,310 @@
+{
+  "vite": {
+    "name": "Vite",
+    "description": "下一代前端构建工具，提供极速的开发体验和热模块替换(HMR)",
+    "configFile": "vite.config.ts",
+    "configContent": {
+      "description": "Vite 配置文件，包含插件、服务器和构建选项",
+      "essentials": [
+        "导入对应框架的 Vite 插件 (如 @vitejs/plugin-vue 或 @vitejs/plugin-react)",
+        "配置 server.port 和 server.open",
+        "设置 resolve.alias 路径别名（如 '@': './src'）",
+        "配置 build.outDir 输出目录"
+      ]
+    },
+    "dependencies": {
+      "vite": "^5.0.0"
+    },
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview"
+    },
+    "features": [
+      "原生 ESM 支持",
+      "极速热模块替换(HMR)",
+      "按需编译",
+      "内置 TypeScript 支持",
+      "丰富的插件生态"
+    ],
+    "integration": {
+      "vue3": {
+        "plugin": "@vitejs/plugin-vue",
+        "import": "import vue from '@vitejs/plugin-vue'",
+        "config": "plugins: [vue()]"
+      },
+      "react": {
+        "plugin": "@vitejs/plugin-react",
+        "import": "import react from '@vitejs/plugin-react'",
+        "config": "plugins: [react()]"
+      }
+    }
+  },
+  "webpack": {
+    "name": "Webpack",
+    "description": "强大的模块打包工具，适用于复杂的企业级应用",
+    "configFile": "webpack.config.js",
+    "configContent": {
+      "description": "Webpack 配置文件，包含入口、输出、加载器和插件",
+      "essentials": [
+        "定义 entry 入口文件",
+        "配置 output 输出路径和文件名",
+        "设置 module.rules 加载器规则",
+        "配置必要的插件（HtmlWebpackPlugin 等）",
+        "配置 devServer 开发服务器"
+      ]
+    },
+    "dependencies": {
+      "webpack": "^5.89.0",
+      "webpack-cli": "^5.1.4",
+      "webpack-dev-server": "^4.15.1"
+    },
+    "devDependencies": {
+      "html-webpack-plugin": "^5.5.0"
+    },
+    "scripts": {
+      "dev": "webpack serve --mode development",
+      "build": "webpack --mode production"
+    },
+    "features": [
+      "强大的代码分割",
+      "灵活的加载器系统",
+      "丰富的插件生态",
+      "成熟稳定的解决方案"
+    ],
+    "integration": {
+      "vue2": {
+        "dependencies": {
+          "vue-loader": "^15.10.0",
+          "vue-style-loader": "^4.1.3",
+          "css-loader": "^6.8.0"
+        },
+        "note": "Vue 2 需要 vue-loader 15.x 版本，并配置 VueLoaderPlugin"
+      },
+      "vue3": {
+        "dependencies": {
+          "vue-loader": "^17.0.0",
+          "css-loader": "^6.8.0"
+        },
+        "note": "Vue 3 使用 vue-loader 17.x 版本"
+      },
+      "react": {
+        "dependencies": {
+          "babel-loader": "^9.1.0",
+          "@babel/core": "^7.23.0",
+          "@babel/preset-react": "^7.23.0",
+          "@babel/preset-env": "^7.23.0"
+        },
+        "note": "React 需要 Babel 转译 JSX"
+      },
+      "typescript": {
+        "dependencies": {
+          "ts-loader": "^9.5.0"
+        },
+        "note": "TypeScript 需要 ts-loader"
+      }
+    },
+    "bestPractices": [
+      "根据框架选择对应的加载器",
+      "配置代码分割优化包体积",
+      "使用 DefinePlugin 注入环境变量",
+      "开发环境启用 HMR 热更新"
+    ]
+  },
+  "electron-vite": {
+    "name": "Electron + Vite",
+    "description": "结合 Electron 和 Vite 的桌面应用开发方案",
+    "configFile": "vite.config.ts",
+    "specialStructure": {
+      "electron/": "Electron 主进程和预加载脚本",
+      "src/": "渲染进程（前端）代码"
+    },
+    "dependencies": {
+      "electron": "^28.0.0",
+      "vite": "^5.0.0"
+    },
+    "scripts": {
+      "dev": "electron-vite dev",
+      "build": "electron-vite build",
+      "preview": "electron-vite preview"
+    },
+    "features": [
+      "主进程和渲染进程分离",
+      "支持进程间通信 (IPC)",
+      "原生桌面能力",
+      "跨平台打包"
+    ]
+  },
+  "rspack": {
+    "name": "Rspack",
+    "description": "基于 Rust 的高性能 Web 构建工具，兼容 Webpack 生态",
+    "configFile": "rspack.config.js",
+    "configContent": {
+      "description": "Rspack 配置文件，语法兼容 Webpack",
+      "essentials": [
+        "配置 entry 和 output",
+        "设置 module.rules 加载器",
+        "配置 plugins 插件",
+        "设置 optimization 优化选项"
+      ]
+    },
+    "dependencies": {
+      "@rspack/core": "^0.5.0",
+      "@rspack/cli": "^0.5.0"
+    },
+    "scripts": {
+      "dev": "rspack serve",
+      "build": "rspack build"
+    },
+    "features": [
+      "极致的构建性能（比 Webpack 快 5-10 倍）",
+      "兼容 Webpack 生态和配置",
+      "内置 SWC 转译器",
+      "模块联邦支持",
+      "Tree Shaking 优化"
+    ],
+    "integration": {
+      "vue3": {
+        "plugin": "@rspack/plugin-vue",
+        "loader": "vue-loader"
+      },
+      "react": {
+        "builtin": "SWC 内置支持 JSX"
+      }
+    },
+    "bestPractices": [
+      "从 Webpack 迁移时使用兼容层",
+      "充分利用 Rust 性能优势",
+      "使用 builtins 替代部分 loader",
+      "配置 experiments 开启实验特性"
+    ]
+  },
+  "rsbuild": {
+    "name": "Rsbuild",
+    "description": "基于 Rspack 的开箱即用构建工具",
+    "configFile": "rsbuild.config.js",
+    "configContent": {
+      "description": "Rsbuild 配置文件，简洁且强大",
+      "essentials": [
+        "配置 source 源码路径",
+        "设置 output 输出配置",
+        "配置 plugins 插件",
+        "设置 dev 开发服务器"
+      ]
+    },
+    "dependencies": {
+      "@rsbuild/core": "^0.3.0"
+    },
+    "scripts": {
+      "dev": "rsbuild dev",
+      "build": "rsbuild build",
+      "preview": "rsbuild preview"
+    },
+    "features": [
+      "零配置开箱即用",
+      "基于 Rspack 的极速构建",
+      "内置最佳实践",
+      "插件化架构",
+      "完善的 TypeScript 支持"
+    ],
+    "integration": {
+      "vue3": {
+        "plugin": "@rsbuild/plugin-vue"
+      },
+      "react": {
+        "plugin": "@rsbuild/plugin-react"
+      }
+    },
+    "bestPractices": [
+      "使用预设配置减少手动配置",
+      "通过插件扩展功能",
+      "利用内置优化提升性能",
+      "使用 environments 多环境构建"
+    ]
+  },
+  "rollup": {
+    "name": "Rollup",
+    "description": "专注于 ES Module 的打包工具，适合库开发",
+    "configFile": "rollup.config.js",
+    "configContent": {
+      "description": "Rollup 配置文件，简洁且灵活",
+      "essentials": [
+        "定义 input 入口文件",
+        "配置 output 输出格式 (ESM/CJS/UMD)",
+        "设置 plugins 插件",
+        "配置 external 外部依赖"
+      ]
+    },
+    "dependencies": {
+      "rollup": "^4.9.0"
+    },
+    "scripts": {
+      "build": "rollup -c",
+      "watch": "rollup -c -w"
+    },
+    "features": [
+      "Tree-shaking 优化",
+      "适合构建库",
+      "多种输出格式",
+      "简洁的配置",
+      "丰富的插件生态"
+    ],
+    "commonPlugins": [
+      "@rollup/plugin-node-resolve - 解析 node_modules",
+      "@rollup/plugin-commonjs - 转换 CommonJS",
+      "@rollup/plugin-typescript - TypeScript 支持",
+      "@rollup/plugin-babel - Babel 转译"
+    ],
+    "bestPractices": [
+      "使用 ESM 格式作为主输出",
+      "配置 external 避免打包依赖",
+      "使用 terser 压缩代码",
+      "生成 sourcemap 方便调试"
+    ]
+  },
+  "parcel": {
+    "name": "Parcel",
+    "description": "零配置的快速打包工具",
+    "configFile": ".parcelrc (可选)",
+    "configContent": {
+      "description": "零配置设计，无需复杂配置",
+      "essentials": [
+        "默认即可工作，无需配置",
+        "可通过 package.json 设置选项",
+        "高级配置使用 .parcelrc"
+      ]
+    },
+    "dependencies": {
+      "parcel": "^2.11.0"
+    },
+    "scripts": {
+      "dev": "parcel src/index.html",
+      "build": "parcel build src/index.html"
+    },
+    "features": [
+      "零配置开箱即用",
+      "多核并行处理",
+      "内置开发服务器",
+      "自动代码分割",
+      "热模块替换 (HMR)"
+    ],
+    "bestPractices": [
+      "适合快速原型开发",
+      "使用 browserslist 配置兼容性",
+      "通过 package.json 进行简单配置",
+      "利用自动优化特性"
+    ]
+  },
+  "turbopack": {
+    "name": "Turbopack",
+    "description": "Vercel 开发的下一代打包工具，集成在 Next.js",
+    "configFile": "next.config.js",
+    "features": [
+      "基于 Rust 的极致性能",
+      "增量计算引擎",
+      "与 Next.js 深度集成",
+      "即时热更新"
+    ],
+    "note": "目前仅集成在 Next.js 中使用，通过 next dev --turbo 启用"
+  }
+}

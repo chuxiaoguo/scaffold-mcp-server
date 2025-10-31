@@ -1,0 +1,131 @@
+{
+  "pinia": {
+    "name": "Pinia",
+    "description": "Vue 3 官方推荐的状态管理库",
+    "framework": "vue3",
+    "structure": {
+      "src/stores/": "状态管理模块目录"
+    },
+    "dependencies": {
+      "pinia": "^2.1.0"
+    },
+    "essentials": [
+      "使用 createPinia() 创建 Pinia 实例",
+      "在 main.ts 中通过 app.use(pinia) 注册",
+      "使用 defineStore 定义 store",
+      "支持 Options API 和 Composition API 风格"
+    ],
+    "bestPractices": [
+      "按功能模块拆分 store",
+      "使用 Composition API 风格获得更好的类型推导",
+      "合理使用 getters 计算派生状态",
+      "使用插件扩展 Pinia 功能"
+    ]
+  },
+  "vuex": {
+    "name": "Vuex",
+    "description": "Vue 2/3 状态管理模式和库",
+    "framework": "vue2",
+    "version": "4.x (Vue 3) / 3.x (Vue 2)",
+    "structure": {
+      "src/store/": "Vuex store 目录"
+    },
+    "dependencies": {
+      "vuex": "^4.1.0"
+    },
+    "essentials": [
+      "创建 store 实例",
+      "定义 state、getters、mutations、actions",
+      "使用 modules 模块化管理状态",
+      "在组件中使用 mapState、mapGetters 等辅助函数"
+    ],
+    "bestPractices": [
+      "模块化拆分 store",
+      "mutations 保持同步，actions 处理异步",
+      "使用命名空间避免命名冲突",
+      "严格模式开发，生产关闭"
+    ]
+  },
+  "redux": {
+    "name": "Redux Toolkit",
+    "description": "React 官方推荐的 Redux 工具集",
+    "framework": "react",
+    "dependencies": {
+      "@reduxjs/toolkit": "^2.0.0",
+      "react-redux": "^9.0.0"
+    },
+    "essentials": [
+      "使用 configureStore 创建 store",
+      "使用 createSlice 创建 reducer",
+      "使用 createAsyncThunk 处理异步逻辑",
+      "使用 Provider 组件包裹应用"
+    ],
+    "bestPractices": [
+      "使用 Redux Toolkit 简化配置",
+      "使用 createSlice 减少样板代码",
+      "合理使用 RTK Query 处理数据获取",
+      "使用 Redux DevTools 调试"
+    ]
+  },
+  "zustand": {
+    "name": "Zustand",
+    "description": "简单快速的 React 状态管理",
+    "framework": "react",
+    "dependencies": {
+      "zustand": "^4.4.0"
+    },
+    "features": [
+      "极简的 API",
+      "无需 Provider 包裹",
+      "支持中间件",
+      "TypeScript 友好"
+    ],
+    "bestPractices": [
+      "保持 store 扁平化",
+      "使用 immer 中间件处理不可变数据",
+      "按功能拆分多个 store",
+      "使用 devtools 中间件调试"
+    ]
+  },
+  "mobx": {
+    "name": "MobX",
+    "description": "简单可扩展的响应式状态管理",
+    "framework": "react",
+    "dependencies": {
+      "mobx": "^6.12.0",
+      "mobx-react-lite": "^4.0.0"
+    },
+    "features": [
+      "响应式数据绑定",
+      "自动依赖追踪",
+      "最小化重渲染",
+      "易于学习"
+    ],
+    "bestPractices": [
+      "使用 makeAutoObservable 简化配置",
+      "合理使用 computed 计算值",
+      "使用 action 修改状态",
+      "避免过度使用 observable"
+    ]
+  },
+  "jotai": {
+    "name": "Jotai",
+    "description": "React 的原子化状态管理",
+    "framework": "react",
+    "dependencies": {
+      "jotai": "^2.6.0"
+    },
+    "features": [
+      "原子化状态",
+      "极简 API",
+      "TypeScript 原生支持",
+      "按需渲染"
+    ],
+    "bestPractices": [
+      "使用 atom 定义原子状态",
+      "使用 useAtom hook 读写状态",
+      "利用派生 atom 计算状态",
+      "合理组织 atom 文件结构"
+    ]
+  }
+}

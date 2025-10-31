@@ -256,8 +256,8 @@ export async function generateScaffold(
         processLogs: unifiedResult.logs,
       };
     } else {
-      // 未找到匹配模板，使用纯动态生成逻辑
-      processLogs.push(`🔧 使用纯动态生成逻辑...`);
+      // 未找到匹配模板，使用纯动态生成逻辑（返回提示词）
+      processLogs.push(`🎯 使用提示词驱动模式，生成项目构建提示词...`);
       const unifiedGenerator = new UnifiedProjectGenerator();
 
       // 将技术栈转换为工具输入格式
@@ -286,14 +286,38 @@ export async function generateScaffold(
         }
       );
 
-      // 转换统一生成器的结果为兼容格式
-      result = {
-        success: unifiedResult.success,
-        message: unifiedResult.success
-          ? "动态项目生成成功"
-          : unifiedResult.error || "动态项目生成失败",
-        projectPath: unifiedResult.targetPath,
-        processLogs: unifiedResult.logs,
+      // 合并 generateProject 返回的详细日志
+      if (unifiedResult.logs && unifiedResult.logs.length > 0) {
+        processLogs.push(...unifiedResult.logs);
+      }
+
+      // 检查是否成功生成提示词
+      if (!unifiedResult.success || !unifiedResult.prompt) {
+        processLogs.push(`❌ 提示词生成失败`);
+        return {
+          projectName,
+          targetPath: projectPath,
+          tree: { name: "failed", type: "directory", path: projectPath },
+          files: [],
+          templateSource: "failed",
+          processLogs,
+        };
+      }
+
+      // 返回提示词结果
+      processLogs.push(`✅ 已生成项目脚手架构建提示词`);
+      return {
+        projectName,
+        targetPath: projectPath,
+        tree: {
+          name: projectName,
+          type: "directory",
+          path: projectPath,
+        },
+        files: [],
+        templateSource: "dynamic-prompt",
+        processLogs,
+        prompt: unifiedResult.prompt, // ⭐️ 返回提示词
       };
     }
 

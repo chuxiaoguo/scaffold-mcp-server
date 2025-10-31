@@ -1,0 +1,195 @@
+{
+  "eslint": {
+    "name": "ESLint",
+    "description": "JavaScript/TypeScript 代码质量检查工具",
+    "category": "linter",
+    "configFile": ".eslintrc.json",
+    "essentials": [
+      "根据框架选择对应的 extends 配置",
+      "配置 parser 为 @typescript-eslint/parser（TypeScript 项目）",
+      "设置 rules 自定义规则",
+      "配置 ignorePatterns 忽略文件"
+    ],
+    "dependencies": {
+      "eslint": "^8.56.0"
+    },
+    "frameworkSpecific": {
+      "vue": {
+        "extends": ["plugin:vue/vue3-recommended"],
+        "dependencies": ["eslint-plugin-vue"]
+      },
+      "react": {
+        "extends": ["plugin:react/recommended", "plugin:react-hooks/recommended"],
+        "dependencies": ["eslint-plugin-react", "eslint-plugin-react-hooks"]
+      }
+    },
+    "bestPractices": [
+      "使用 eslint:recommended 作为基础配置",
+      "启用 TypeScript 严格检查规则",
+      "配合 Prettier 使用避免冲突",
+      "使用 eslint-plugin-import 管理导入"
+    ]
+  },
+  "prettier": {
+    "name": "Prettier",
+    "description": "代码格式化工具",
+    "category": "formatter",
+    "configFile": ".prettierrc",
+    "essentials": [
+      "配置 semi（分号）规则",
+      "设置 singleQuote（单引号）偏好",
+      "配置 tabWidth 和 useTabs",
+      "设置 trailingComma（尾随逗号）规则"
+    ],
+    "dependencies": {
+      "prettier": "^3.2.0"
+    },
+    "recommendedConfig": {
+      "semi": false,
+      "singleQuote": true,
+      "tabWidth": 2,
+      "trailingComma": "es5",
+      "printWidth": 100
+    },
+    "bestPractices": [
+      "配合编辑器插件使用",
+      "与 ESLint 集成使用 eslint-config-prettier",
+      "添加 .prettierignore 忽略文件",
+      "统一团队格式化规则"
+    ]
+  },
+  "vitest": {
+    "name": "Vitest",
+    "description": "基于 Vite 的单元测试框架",
+    "category": "testing",
+    "configFile": "vitest.config.ts",
+    "dependencies": {
+      "vitest": "^1.1.0",
+      "@vitest/ui": "^1.1.0"
+    },
+    "features": [
+      "极速的测试执行",
+      "兼容 Jest API",
+      "内置 TypeScript 支持",
+      "智能监听模式"
+    ],
+    "bestPractices": [
+      "使用 describe 和 it 组织测试",
+      "合理使用 mock 和 spy",
+      "使用快照测试验证组件输出",
+      "配置覆盖率报告"
+    ]
+  },
+  "jest": {
+    "name": "Jest",
+    "description": "JavaScript 测试框架",
+    "category": "testing",
+    "configFile": "jest.config.js",
+    "dependencies": {
+      "jest": "^29.7.0"
+    },
+    "devDependencies": {
+      "@types/jest": "^29.5.0",
+      "ts-jest": "^29.1.0"
+    },
+    "features": [
+      "零配置开箱即用",
+      "快照测试",
+      "代码覆盖率",
+      "Mock 功能强大"
+    ],
+    "bestPractices": [
+      "使用 describe 和 test 组织用例",
+      "合理使用 beforeEach 和 afterEach",
+      "使用 jest.mock 模拟依赖",
+      "配置 setupFilesAfterEnv 全局配置"
+    ]
+  },
+  "commitlint": {
+    "name": "Commitlint",
+    "description": "Git commit 消息规范检查",
+    "category": "git-tools",
+    "configFile": "commitlint.config.js",
+    "dependencies": {
+      "@commitlint/cli": "^18.4.0",
+      "@commitlint/config-conventional": "^18.4.0"
+    },
+    "essentials": [
+      "配置提交消息格式规范",
+      "集成 Husky Git hooks",
+      "使用 conventional 规范"
+    ],
+    "conventionalFormat": "type(scope): subject",
+    "types": ["feat", "fix", "docs", "style", "refactor", "test", "chore"],
+    "bestPractices": [
+      "遵循 Conventional Commits 规范",
+      "配置 commit-msg hook 自动检查",
+      "使用 commitizen 辅助生成提交消息"
+    ]
+  },
+  "husky": {
+    "name": "Husky",
+    "description": "Git hooks 管理工具",
+    "category": "git-tools",
+    "dependencies": {
+      "husky": "^8.0.0"
+    },
+    "essentials": [
+      "初始化 .husky 目录",
+      "配置 pre-commit hook 执行代码检查",
+      "配置 commit-msg hook 检查提交消息"
+    ],
+    "bestPractices": [
+      "配合 lint-staged 使用",
+      "在 pre-commit 执行代码检查",
+      "在 commit-msg 执行消息规范检查",
+      "避免 hook 执行时间过长"
+    ]
+  },
+  "lint-staged": {
+    "name": "Lint Staged",
+    "description": "对暂存的 Git 文件运行 linters",
+    "category": "git-tools",
+    "configFile": ".lintstagedrc.json",
+    "dependencies": {
+      "lint-staged": "^15.2.0"
+    },
+    "essentials": [
+      "配置文件匹配规则",
+      "设置对应的 lint 命令",
+      "集成到 pre-commit hook"
+    ],
+    "recommendedConfig": {
+      "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+      "*.{css,scss,less}": ["prettier --write"],
+      "*.vue": ["eslint --fix", "prettier --write"]
+    },
+    "bestPractices": [
+      "只检查暂存文件提高速度",
+      "配置自动修复避免重复提交",
+      "合理配置 glob 模式",
+      "避免运行耗时的任务"
+    ]
+  },
+  "stylelint": {
+    "name": "Stylelint",
+    "description": "CSS 代码检查工具",
+    "category": "linter",
+    "configFile": ".stylelintrc.json",
+    "dependencies": {
+      "stylelint": "^16.1.0",
+      "stylelint-config-standard": "^36.0.0"
+    },
+    "essentials": [
+      "配置 extends 继承标准规则",
+      "设置 rules 自定义规则",
+      "配置 ignoreFiles 忽略文件"
+    ],
+    "bestPractices": [
+      "使用 stylelint-config-standard 标准配置",
+      "配合预处理器使用对应插件",
+      "集成到编辑器实时检查",
+      "在 pre-commit 自动修复"
+    ]
+  }
+}

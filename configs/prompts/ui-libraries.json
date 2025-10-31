@@ -1,0 +1,155 @@
+{
+  "element-ui": {
+    "name": "Element UI",
+    "description": "Vue 2 组件库，企业级设计系统",
+    "framework": "vue2",
+    "dependencies": {
+      "element-ui": "^2.15.14"
+    },
+    "essentials": [
+      "全局引入或按需引入组件",
+      "导入样式文件",
+      "配置国际化（可选）"
+    ],
+    "recommendedSetup": "全局引入或配合 babel-plugin-component 按需引入",
+    "features": [
+      "企业级设计语言",
+      "丰富的组件库",
+      "完善的国际化",
+      "主题定制系统"
+    ],
+    "bestPractices": [
+      "使用按需引入减小包体积",
+      "配置全局主题变量",
+      "使用 SCSS 变量定制主题"
+    ]
+  },
+  "element-plus": {
+    "name": "Element Plus",
+    "description": "Vue 3 组件库，基于 Element UI 升级",
+    "framework": "vue3",
+    "dependencies": {
+      "element-plus": "^2.5.0"
+    },
+    "essentials": [
+      "全局引入或按需引入组件",
+      "导入样式文件",
+      "配置国际化（可选）"
+    ],
+    "recommendedSetup": "按需引入（配合 unplugin-vue-components 和 unplugin-auto-import）",
+    "autoImportPlugins": {
+      "unplugin-vue-components": "^0.26.0",
+      "unplugin-auto-import": "^0.17.0"
+    },
+    "bestPractices": [
+      "使用按需引入减小包体积",
+      "配置全局主题变量",
+      "使用 ElConfigProvider 统一配置"
+    ]
+  },
+  "antd": {
+    "name": "Ant Design",
+    "description": "React UI 组件库，企业级设计系统",
+    "framework": "react",
+    "dependencies": {
+      "antd": "^5.12.0"
+    },
+    "essentials": [
+      "按需引入组件",
+      "配置主题定制（可选）",
+      "导入样式"
+    ],
+    "recommendedSetup": "使用 CSS-in-JS 方案，无需额外配置",
+    "features": [
+      "企业级设计语言",
+      "丰富的组件库",
+      "完善的国际化",
+      "主题定制系统"
+    ],
+    "bestPractices": [
+      "使用 ConfigProvider 全局配置",
+      "按需加载组件",
+      "使用 Design Token 定制主题",
+      "遵循 Ant Design 设计规范"
+    ]
+  },
+  "naive-ui": {
+    "name": "Naive UI",
+    "description": "Vue 3 组件库，TypeScript 友好",
+    "framework": "vue3",
+    "dependencies": {
+      "naive-ui": "^2.36.0"
+    },
+    "features": [
+      "完整的 TypeScript 支持",
+      "主题可定制",
+      "Tree-shaking 友好",
+      "无需额外配置"
+    ],
+    "bestPractices": [
+      "使用 n-config-provider 配置主题",
+      "按需引入组件",
+      "使用 composables 进行逻辑复用"
+    ]
+  },
+  "vuetify": {
+    "name": "Vuetify",
+    "description": "Vue Material Design 组件库",
+    "framework": "vue3",
+    "dependencies": {
+      "vuetify": "^3.4.0"
+    },
+    "features": [
+      "Material Design 规范",
+      "响应式布局系统",
+      "丰富的组件",
+      "主题定制"
+    ],
+    "bestPractices": [
+      "使用 Vuetify Grid System 布局",
+      "配置全局主题",
+      "按需引入组件"
+    ]
+  },
+  "chakra-ui": {
+    "name": "Chakra UI",
+    "description": "React 组件库，可访问性优先",
+    "framework": "react",
+    "dependencies": {
+      "@chakra-ui/react": "^2.8.0",
+      "@emotion/react": "^11.11.0",
+      "@emotion/styled": "^11.11.0",
+      "framer-motion": "^10.16.0"
+    },
+    "features": [
+      "可访问性优先",
+      "主题化系统",
+      "组合式 API",
+      "深色模式支持"
+    ],
+    "bestPractices": [
+      "使用 ChakraProvider 包裹应用",
+      "使用 Design Tokens 定制主题",
+      "遵循可访问性最佳实践"
+    ]
+  },
+  "arco-design": {
+    "name": "Arco Design",
+    "description": "字节跳动企业级设计系统",
+    "framework": "react",
+    "dependencies": {
+      "@arco-design/web-react": "^2.54.0"
+    },
+    "features": [
+      "企业级组件库",
+      "主题商店",
+      "Material 2.0 设计",
+      "国际化支持"
+    ],
+    "bestPractices": [
+      "使用 ConfigProvider 配置",
+      "按需加载组件",
+      "使用主题商店定制主题"
+    ]
+  }
+}

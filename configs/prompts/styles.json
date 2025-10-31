@@ -1,0 +1,108 @@
+{
+  "tailwind": {
+    "name": "Tailwind CSS",
+    "description": "实用优先的 CSS 框架",
+    "configFiles": {
+      "tailwind.config.js": "Tailwind 配置文件",
+      "postcss.config.js": "PostCSS 配置文件"
+    },
+    "essentials": [
+      "在 tailwind.config.js 中配置 content 扫描路径",
+      "在主 CSS 文件中引入 @tailwind 指令",
+      "配置 PostCSS 插件"
+    ],
+    "dependencies": {
+      "tailwindcss": "^3.4.0",
+      "postcss": "^8.4.0",
+      "autoprefixer": "^10.4.0"
+    },
+    "files": {
+      "src/index.css": "@tailwind base;\n@tailwind components;\n@tailwind utilities;"
+    },
+    "bestPractices": [
+      "使用实用类而非自定义 CSS",
+      "通过 @apply 指令复用样式组合",
+      "配置主题扩展自定义设计系统",
+      "使用 JIT 模式获得最佳性能"
+    ]
+  },
+  "sass": {
+    "name": "Sass",
+    "description": "CSS 预处理器，支持变量、嵌套、混入等功能",
+    "fileExtensions": [".scss", ".sass"],
+    "dependencies": {
+      "sass": "^1.69.0"
+    },
+    "features": [
+      "变量和嵌套规则",
+      "Mixins 和 Functions",
+      "模块化导入",
+      "强大的计算能力"
+    ],
+    "bestPractices": [
+      "使用 SCSS 语法（更接近 CSS）",
+      "合理拆分 partial 文件",
+      "善用变量管理颜色和尺寸",
+      "使用 @use 替代 @import"
+    ]
+  },
+  "less": {
+    "name": "Less",
+    "description": "CSS 预处理器，语法简洁易学",
+    "fileExtensions": [".less"],
+    "dependencies": {
+      "less": "^4.2.0",
+      "less-loader": "^11.1.0"
+    },
+    "features": [
+      "变量和嵌套",
+      "Mixins 和 函数",
+      "运算和颜色处理",
+      "命名空间"
+    ],
+    "bestPractices": [
+      "使用变量统一管理主题",
+      "合理使用 mixins 复用样式",
+      "保持嵌套层级在 3 层以内",
+      "模块化组织样式文件"
+    ]
+  },
+  "styled-components": {
+    "name": "Styled Components",
+    "description": "CSS-in-JS 解决方案，适用于 React",
+    "dependencies": {
+      "styled-components": "^6.1.0"
+    },
+    "devDependencies": {
+      "@types/styled-components": "^5.1.0"
+    },
+    "features": [
+      "组件级样式封装",
+      "动态样式支持",
+      "主题系统",
+      "自动供应商前缀"
+    ],
+    "bestPractices": [
+      "使用 ThemeProvider 管理主题",
+      "避免在 render 中创建样式组件",
+      "使用 attrs 方法优化性能",
+      "合理使用 props 传递动态样式"
+    ]
+  },
+  "css": {
+    "name": "CSS",
+    "description": "原生 CSS，无需额外处理",
+    "features": [
+      "原生支持，无需编译",
+      "简单直接",
+      "广泛兼容",
+      "无额外依赖"
+    ],
+    "bestPractices": [
+      "使用 CSS 变量管理主题",
+      "采用 BEM 命名规范",
+      "合理使用 Flexbox 和 Grid",
+      "使用现代 CSS 特性（如 Container Queries）"
+    ]
+  }
+}

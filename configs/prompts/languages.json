@@ -1,0 +1,42 @@
+{
+  "typescript": {
+    "name": "TypeScript",
+    "description": "JavaScript 的超集，提供静态类型检查",
+    "configFile": "tsconfig.json",
+    "essentials": [
+      "设置 compilerOptions.target 为 ESNext 或 ES2020",
+      "启用 strict 模式获得最佳类型检查",
+      "配置 module 为 ESNext（配合 Vite）或 CommonJS",
+      "设置 moduleResolution 为 bundler 或 node",
+      "配置路径别名 paths"
+    ],
+    "dependencies": {
+      "typescript": "^5.3.0"
+    },
+    "devDependencies": {
+      "@types/node": "^20.10.0"
+    },
+    "bestPractices": [
+      "为所有函数参数和返回值添加类型",
+      "使用接口(interface)定义数据结构",
+      "启用严格模式获得最佳类型安全",
+      "合理使用泛型提高代码复用性"
+    ]
+  },
+  "javascript": {
+    "name": "JavaScript",
+    "description": "动态类型的编程语言",
+    "features": [
+      "灵活的动态类型",
+      "广泛的生态系统",
+      "快速开发迭代",
+      "无需编译步骤"
+    ],
+    "bestPractices": [
+      "使用 ES6+ 现代语法",
+      "遵循一致的命名规范",
+      "合理使用解构和扩展运算符",
+      "善用 async/await 处理异步"
+    ]
+  }
+}

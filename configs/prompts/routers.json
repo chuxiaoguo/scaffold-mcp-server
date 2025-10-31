@@ -1,0 +1,66 @@
+{
+  "vue-router": {
+    "name": "Vue Router",
+    "description": "Vue.js 官方路由管理器",
+    "framework": "vue3",
+    "version": "4.x",
+    "structure": {
+      "src/router/index.ts": "路由配置文件"
+    },
+    "dependencies": {
+      "vue-router": "^4.2.0"
+    },
+    "essentials": [
+      "使用 createRouter 和 createWebHistory 创建路由实例",
+      "定义路由数组，包含 path、name、component",
+      "在 main.ts 中通过 app.use(router) 注册",
+      "使用 <router-view> 组件渲染匹配的组件"
+    ],
+    "bestPractices": [
+      "使用路由懒加载优化性能",
+      "定义路由元信息 meta 字段",
+      "实现路由守卫进行权限控制",
+      "使用命名路由和命名视图"
+    ]
+  },
+  "react-router": {
+    "name": "React Router",
+    "description": "React 声明式路由库",
+    "framework": "react",
+    "version": "6.x",
+    "dependencies": {
+      "react-router-dom": "^6.20.0"
+    },
+    "essentials": [
+      "使用 createBrowserRouter 创建路由",
+      "使用 RouterProvider 提供路由上下文",
+      "使用 Outlet 组件渲染子路由",
+      "使用 useNavigate hook 进行导航"
+    ],
+    "bestPractices": [
+      "使用数据路由 (Data Router) API",
+      "实现路由懒加载",
+      "使用 loader 和 action 处理数据",
+      "使用 ErrorBoundary 处理错误"
+    ]
+  },
+  "tanstack-router": {
+    "name": "TanStack Router",
+    "description": "类型安全的 React 路由库",
+    "framework": "react",
+    "dependencies": {
+      "@tanstack/react-router": "^1.8.0"
+    },
+    "features": [
+      "完整的 TypeScript 类型推导",
+      "内置搜索参数管理",
+      "路由级数据加载",
+      "自动代码分割"
+    ],
+    "bestPractices": [
+      "充分利用类型安全特性",
+      "使用路由上下文传递数据",
+      "实现路由级错误边界"
+    ]
+  }
+}

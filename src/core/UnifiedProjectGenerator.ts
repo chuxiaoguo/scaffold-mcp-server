@@ -14,7 +14,6 @@ import {
   generateFromFixedTemplate,
   type TemplateResult,
 } from "../tools/templateDownloader.js";
-import { generateFromNonFixedTemplate } from "../tools/dynamicGenerator.js";
 import {
   TechStack,
   GenerateOptions,
@@ -44,6 +43,7 @@ export interface UnifiedGenerateResult {
   logs: string[];
   strategy?: StrategyMatch;
   error?: string;
+  prompt?: string; // 动态生成时返回的提示词
 }
 
 /**
@@ -115,48 +115,74 @@ export class UnifiedProjectGenerator {
 
   /**
    * 使用纯动态生成（跳过所有模板匹配）
-   * 专门为 generateScaffold.ts 的动态分支提供，避免重复的策略选择
+   * 专门为 generateScaffold.ts 的动态分支提供，返回结构化提示词
    */
   async generateWithDynamicTemplate(
     toolInput: UnifiedToolInput,
     options: UnifiedGenerateOptions = {}
   ): Promise<UnifiedGenerateResult> {
-    return this.generateProjectCore(
-      toolInput,
-      options,
-      (toolSet) => ({
-        strategy: {
-          id: "dynamic-generation",
-          pattern: [],
-          type: "dynamic",
-          priority: 0,
-          description: "动态项目生成策略",
-          defaults: {},
-        },
-        score: 100,
-        matchType: "exact",
-        matchedTools: toolSet.all,
-        missingTools: [],
-        extraTools: [],
-      }),
-      async (enhancedToolSet, projectName, logs) => {
-        logs.push("   - 使用动态生成策略");
-        return await generateFromNonFixedTemplate(
-          this.convertToTechStack(enhancedToolSet),
-          projectName,
-          logs
-        );
-      },
-      {
-        start: "🚀 开始纯动态项目生成流程",
-        templateInfo: "⚡ 跳过模板匹配，直接使用动态生成",
-        strategyInfo: "🎯 使用动态生成策略...",
-        generationType: "🔨 执行动态项目生成...",
-        success: "✅ 动态项目生成完成",
-        error: "❌ 动态生成失败",
-      },
-      "dynamic-project"
-    );
+    const logs: string[] = [];
+
+    try {
+      logs.push("🚀 开始纯动态项目生成流程（提示词模式）");
+      logs.push("⚡ 跳过模板匹配，生成项目构建提示词");
+
+      // 1. 解析工具输入
+      logs.push("📋 解析工具配置...");
+      const toolSet = this.toolParser.parse(toolInput);
+      logs.push(`   - 解析完成，共识别 ${toolSet.all.length} 个工具`);
+
+      // 2. 转换为技术栈
+      const techStack = this.convertToTechStack(toolSet);
+
+      // 3. 生成提示词（替代原来的动态生成）
+      logs.push("🎯 使用 PromptBuilder 生成项目构建提示词...");
+      const { generatePromptForDynamicTemplate } = await import(
+        "../tools/dynamicGenerator.js"
+      );
+      const prompt = await generatePromptForDynamicTemplate(
+        techStack,
+        options.projectName || "my-project",
+        toolSet.tools,
+        logs
+      );
+
+      logs.push("✅ 提示词生成完成");
+      logs.push(`   - 提示词长度: ${prompt.length} 字符`);
+
+      // 4. 确定项目路径
+      const projectName = options.projectName || "dynamic-project";
+      const outputDir = options.outputDir || process.cwd();
+      const targetPath = path.resolve(outputDir, projectName);
+
+      // 5. 返回提示词结果（不生成文件）
+      return {
+        success: true,
+        projectName,
+        targetPath,
+        files: {}, // 空文件列表
+        packageJson: {},
+        logs,
+        prompt, // ⭐️ 返回生成的提示词
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logs.push(`❌ 提示词生成失败: ${errorMessage}`);
+
+      return {
+        success: false,
+        projectName: options.projectName || "dynamic-project",
+        targetPath: path.resolve(
+          options.outputDir || process.cwd(),
+          options.projectName || "dynamic-project"
+        ),
+        files: {},
+        packageJson: {},
+        logs,
+        error: errorMessage,
+      };
+    }
   }
 
   /**
@@ -240,11 +266,11 @@ export class UnifiedProjectGenerator {
           files: result.files,
           packageJson: result.packageJson,
           tools: [...enhancedToolSet.all, ...injectableTools], // 包含所有工具
-          framework: techStack.framework,
-          buildTool: techStack.builder,
-          language: techStack.language,
-          techStack: techStack,
           logs: [],
+          ...(techStack.framework && { framework: techStack.framework }),
+          ...(techStack.builder && { buildTool: techStack.builder }),
+          ...(techStack.language && { language: techStack.language }),
+          techStack: techStack,
         };
 
         // 执行注入
