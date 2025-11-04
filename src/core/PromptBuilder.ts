@@ -1,9 +1,12 @@
 import * as path from "path";
-import * as fs from "fs";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import frameworkPrompts from "../../configs/prompts/framework-prompts.json" assert { type: "json" };
+import buildtoolPrompts from "../../configs/prompts/buildtool-prompts.json" assert { type: "json" };
+import languages from "../../configs/prompts/languages.json" assert { type: "json" };
+import styles from "../../configs/prompts/styles.json" assert { type: "json" };
+import uiLibraries from "../../configs/prompts/ui-libraries.json" assert { type: "json" };
+import routers from "../../configs/prompts/routers.json" assert { type: "json" };
+import stateManagement from "../../configs/prompts/state-management.json" assert { type: "json" };
+import tools from "../../configs/prompts/tools.json" assert { type: "json" };
 
 /**
  * 提示词配置接口
@@ -41,75 +44,23 @@ interface PromptTemplates {
 export class PromptBuilder {
   private static templates: PromptTemplates | null = null;
 
-  /**
-   * 加载提示词模板配置
-   */
   private static async loadPromptTemplates(): Promise<PromptTemplates> {
     if (this.templates) {
       return this.templates;
     }
 
-    const promptsDir = path.join(__dirname, "../../configs/prompts");
+    this.templates = {
+      frameworks: frameworkPrompts,
+      buildtools: buildtoolPrompts,
+      languages: languages,
+      styles: styles,
+      uiLibraries: uiLibraries,
+      routers: routers,
+      stateManagement: stateManagement,
+      tools: tools,
+    };
 
-    try {
-      const [
-        frameworks,
-        buildtools,
-        languages,
-        styles,
-        uiLibraries,
-        routers,
-        stateManagement,
-        tools,
-      ] = await Promise.all([
-        fs.promises.readFile(
-          path.join(promptsDir, "framework-prompts.json"),
-          "utf-8"
-        ),
-        fs.promises.readFile(
-          path.join(promptsDir, "buildtool-prompts.json"),
-          "utf-8"
-        ),
-        fs.promises.readFile(path.join(promptsDir, "languages.json"), "utf-8"),
-        fs.promises.readFile(path.join(promptsDir, "styles.json"), "utf-8"),
-        fs.promises.readFile(
-          path.join(promptsDir, "ui-libraries.json"),
-          "utf-8"
-        ),
-        fs.promises.readFile(path.join(promptsDir, "routers.json"), "utf-8"),
-        fs.promises.readFile(
-          path.join(promptsDir, "state-management.json"),
-          "utf-8"
-        ),
-        fs.promises.readFile(path.join(promptsDir, "tools.json"), "utf-8"),
-      ]);
-
-      this.templates = {
-        frameworks: JSON.parse(frameworks),
-        buildtools: JSON.parse(buildtools),
-        languages: JSON.parse(languages),
-        styles: JSON.parse(styles),
-        uiLibraries: JSON.parse(uiLibraries),
-        routers: JSON.parse(routers),
-        stateManagement: JSON.parse(stateManagement),
-        tools: JSON.parse(tools),
-      };
-
-      return this.templates;
-    } catch (error) {
-      console.error("Failed to load prompt templates:", error);
-      // 返回空模板作为后备
-      return {
-        frameworks: {},
-        buildtools: {},
-        languages: {},
-        styles: {},
-        uiLibraries: {},
-        routers: {},
-        stateManagement: {},
-        tools: {},
-      };
-    }
+    return this.templates;
   }
 
   /**

@@ -383,9 +383,12 @@ export class TemplateConfigManager {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.addLog(`[TemplateConfigManager] ❌ 文件读取失败: ${errorMsg}`);
-      
+
       // 尝试备用路径
-      if (filePath.includes("scaffold-template") || filePath.includes("templates.config.json")) {
+      if (
+        filePath.includes("scaffold-template") ||
+        filePath.includes("templates.config.json")
+      ) {
         const backupPath = path.join(
           path.dirname(__dirname),
           "scaffold-mcp-server",
@@ -393,7 +396,7 @@ export class TemplateConfigManager {
           "scaffold-template",
           "templates.config.json"
         );
-        
+
         if (backupPath !== filePath) {
           this.addLog(`[TemplateConfigManager] 尝试备用路径: ${backupPath}`);
           try {
@@ -404,12 +407,17 @@ export class TemplateConfigManager {
             );
             return backupParsed;
           } catch (backupErr) {
-            const backupErrorMsg = backupErr instanceof Error ? backupErr.message : String(backupErr);
-            this.addLog(`[TemplateConfigManager] ❌ 备用路径读取失败: ${backupErrorMsg}`);
+            const backupErrorMsg =
+              backupErr instanceof Error
+                ? backupErr.message
+                : String(backupErr);
+            this.addLog(
+              `[TemplateConfigManager] ❌ 备用路径读取失败: ${backupErrorMsg}`
+            );
           }
         }
       }
-      
+
       return null;
     }
   }

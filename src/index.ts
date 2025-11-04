@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -12,6 +10,9 @@ import { ResponseFormatter } from "./utils/ResponseFormatter.js";
 import { MCPErrorHandler } from "./utils/MCPErrorHandler.js";
 import { MessageTemplates } from "./utils/MessageTemplates.js";
 import { getAllToolSchemas } from "./config/toolSchemas.js";
+import packageJson from "../package.json" assert { type: "json" };
+
+const { name, version } = packageJson;
 
 class ScaffoldMCPServer {
   private server: Server;
@@ -20,26 +21,18 @@ class ScaffoldMCPServer {
     console.error("[DEBUG] 初始化 ScaffoldMCPServer...");
 
     this.server = new Server({
-      name: "scaffold-mcp-server",
-      version: "1.0.0",
+      name: name,
+      version: version,
     });
-
-    console.error("[DEBUG] MCP Server 实例创建完成");
-
     this.setupToolHandlers();
     this.setupErrorHandling();
-
-    console.error("[DEBUG] 工具处理器和错误处理设置完成");
   }
 
   private setupToolHandlers(): void {
-    console.error("[DEBUG] 设置工具处理器...");
-
     // 注册工具列表处理器
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       console.error("[DEBUG] 收到 ListTools 请求");
       const tools = getAllToolSchemas();
-      console.error(`[DEBUG] 返回 ${tools.length} 个工具`);
       return {
         tools: tools,
       };
@@ -68,8 +61,6 @@ class ScaffoldMCPServer {
         throw error;
       }
     });
-
-    console.error("[DEBUG] 工具处理器设置完成");
   }
 
   public async handleGenerateScaffold(params: GenerateScaffoldParams) {

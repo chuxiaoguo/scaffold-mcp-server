@@ -1,6 +1,7 @@
 import * as path from "path";
-import * as fs from "fs";
 import { fileURLToPath } from "url";
+import toolCategories from "../../configs/tools/tool-categories.json" assert { type: "json" };
+import toolProperties from "../../configs/tools/tool-properties.json" assert { type: "json" };
 import { TechStack } from "../types/index.js";
 
 // 工具输入类型定义
@@ -54,35 +55,10 @@ interface ToolProperties {
 export class UnifiedToolParser {
   private toolCategories!: ToolCategories;
   private toolProperties!: ToolProperties;
-  private configPath: string;
 
-  constructor(configPath?: string) {
-    // ES 模块中使用 import.meta.url 获取当前文件路径
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    this.configPath = configPath || path.join(__dirname, "../../configs/tools");
-    this.loadConfigurations();
-  }
-
-  /**
-   * 加载配置文件
-   */
-  private loadConfigurations(): void {
-    try {
-      const categoriesPath = path.join(this.configPath, "tool-categories.json");
-      const propertiesPath = path.join(this.configPath, "tool-properties.json");
-
-      this.toolCategories = JSON.parse(
-        fs.readFileSync(categoriesPath, "utf-8")
-      );
-      this.toolProperties = JSON.parse(
-        fs.readFileSync(propertiesPath, "utf-8")
-      );
-    } catch (error: any) {
-      throw new Error(
-        `Failed to load tool configurations: ${error?.message || "Unknown error"}`
-      );
-    }
+  constructor() {
+    this.toolCategories = toolCategories;
+    this.toolProperties = toolProperties;
   }
 
   /**

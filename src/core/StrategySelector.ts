@@ -2,6 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { fileURLToPath } from "url";
 import { ParsedToolSet } from "./UnifiedToolParser.js";
+import generationStrategies from "../../configs/strategies/generation-strategies.json" assert { type: "json" };
 
 // 生成策略类型定义
 export interface GenerationStrategy {
@@ -54,17 +55,7 @@ export class StrategySelector {
    * 加载策略配置
    */
   private loadConfiguration(): void {
-    try {
-      const configFile = path.join(
-        this.configPath,
-        "generation-strategies.json"
-      );
-      this.config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
-    } catch (error: any) {
-      throw new Error(
-        `Failed to load strategy configuration: ${error?.message || "Unknown error"}`
-      );
-    }
+    this.config = generationStrategies as StrategyConfig;
   }
 
   /**

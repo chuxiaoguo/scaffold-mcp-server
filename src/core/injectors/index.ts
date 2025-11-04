@@ -1,17 +1,3 @@
-export type { ToolInjector } from "./ToolInjector.js";
-export { ESLintInjector } from "./eslintInjector.js";
-export { PrettierInjector } from "./prettierInjector.js";
-export { JestInjector } from "./jestInjector.js";
-export { HuskyInjector } from "./huskyInjector.js";
-export { CommitlintInjector } from "./commitlintInjector.js";
-export { TailwindCSSInjector } from "./tailwindCSSInjector.js";
-export { WebpackInjector } from "./WebpackInjector.js";
-export { ElementUIInjector } from "./ElementUIInjector.js";
-export { BabelInjector } from "./BabelInjector.js";
-export { ElementPlusInjector } from "./ElementPlusInjector.js";
-export { AntdInjector } from "./AntdInjector.js";
-export { PiniaInjector } from "./PiniaInjector.js";
-export { VuexInjector } from "./VuexInjector.js";
-export { VueRouterInjector } from "./VueRouterInjector.js";
-export { ReactRouterInjector } from "./ReactRouterInjector.js";
-export { VitestInjector } from "./VitestInjector.js";
+// 旧版注入器已废弃，统一使用 unified/ 目录下的注入系统
+// 所有注入器通过 getUnifiedInjectorManager() 统一管理
+export * from "./unified/index.js";

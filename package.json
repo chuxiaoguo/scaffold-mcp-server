@@ -25,7 +25,8 @@
     "RELEASE_NOTES.md"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/index.js && node scripts/copy-config.cjs && node scripts/copy-configs.cjs && node scripts/copy-templates.cjs",
+    "build": "rollup -c && chmod +x dist/index.js",
+    "build:watch": "rollup -c -w",
     "copy-templates": "node scripts/copy-templates.cjs",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
@@ -62,6 +63,10 @@
     "degit"
   ],
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/degit": "^2.8.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.11.17",
@@ -71,8 +76,11 @@
     "eslint": "^8.56.0",
     "jest": "^29.7.0",
     "prettier": "^3.2.5",
+    "rollup": "^4.52.5",
+    "rollup-plugin-copy": "^3.5.0",
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
+    "tslib": "^2.8.1",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4"
