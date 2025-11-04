@@ -86,21 +86,39 @@ export class MessageTemplates {
 {{suggestions}}`;
 
   /**
+   * 提示词消息模板
+   */
+  static readonly PROMPT_TEMPLATE = `🎯 项目脚手架构建提示词
+
+📁 项目名称: {{projectName}}
+
+---
+
+{{prompt}}
+
+---
+
+{{processLogs}}💡 使用说明:
+请将上述提示词提供给 AI 助手，让其根据提示词自主构建完整的项目结构和文件。
+AI 助手将根据提示词中的详细规范，生成一个完整、可运行的项目脚手架。`;
+
+  /**
    * 渲染模板
    */
   static render(template: string, data: TemplateData): string {
     let result = template;
-    
+
     // 替换所有的 {{key}} 占位符
     Object.entries(data).forEach(([key, value]) => {
-      const placeholder = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      const stringValue = value !== undefined && value !== null ? String(value) : '';
+      const placeholder = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+      const stringValue =
+        value !== undefined && value !== null ? String(value) : "";
       result = result.replace(placeholder, stringValue);
     });
-    
+
     // 清理未替换的占位符
-    result = result.replace(/\{\{[^}]+\}\}/g, '');
-    
+    result = result.replace(/\{\{[^}]+\}\}/g, "");
+
     return result;
   }
 
@@ -117,8 +135,8 @@ export class MessageTemplates {
   }): string {
     return this.render(this.SUCCESS_TEMPLATE, {
       ...data,
-      templateSource: data.templateSource || '未知',
-      processLogs: data.processLogs || ''
+      templateSource: data.templateSource || "未知",
+      processLogs: data.processLogs || "",
     });
   }
 
@@ -138,12 +156,12 @@ export class MessageTemplates {
     }
 
     return this.render(this.ERROR_TEMPLATE, {
-      projectName: data.projectName || '未知',
-      targetPath: data.targetPath || '未知',
+      projectName: data.projectName || "未知",
+      targetPath: data.targetPath || "未知",
       errorMessage: data.errorMessage,
       fileCount: data.fileCount || 0,
-      directoryStructure: data.directoryStructure || '未生成',
-      processLogs: data.processLogs || ''
+      directoryStructure: data.directoryStructure || "未生成",
+      processLogs: data.processLogs || "",
     });
   }
 
@@ -158,7 +176,7 @@ export class MessageTemplates {
   }): string {
     return this.render(this.PROJECT_INFO_TEMPLATE, {
       ...data,
-      templateSource: data.templateSource || '未知'
+      templateSource: data.templateSource || "未知",
     });
   }
 
@@ -167,10 +185,10 @@ export class MessageTemplates {
    */
   static renderProcessLogs(logs: string[]): string {
     if (!logs || logs.length === 0) {
-      return '';
+      return "";
     }
 
-    const formattedLogs = logs.map(log => `  ${log}`).join('\n');
+    const formattedLogs = logs.map((log) => `  ${log}`).join("\n");
     return this.render(this.PROCESS_LOGS_TEMPLATE, { logs: formattedLogs });
   }
 
@@ -185,11 +203,27 @@ export class MessageTemplates {
    * 渲染建议信息
    */
   static renderSuggestions(suggestions: string[]): string {
-    const formattedSuggestions = suggestions.map((suggestion, index) => 
-      `${index + 1}. ${suggestion}`
-    ).join('\n');
-    
-    return this.render(this.SUGGESTIONS_TEMPLATE, { suggestions: formattedSuggestions });
+    const formattedSuggestions = suggestions
+      .map((suggestion, index) => `${index + 1}. ${suggestion}`)
+      .join("\n");
+
+    return this.render(this.SUGGESTIONS_TEMPLATE, {
+      suggestions: formattedSuggestions,
+    });
+  }
+
+  /**
+   * 渲染提示词消息
+   */
+  static renderPrompt(data: {
+    projectName: string;
+    prompt: string;
+    processLogs?: string;
+  }): string {
+    return this.render(this.PROMPT_TEMPLATE, {
+      ...data,
+      processLogs: data.processLogs || "",
+    });
   }
 
   /**
@@ -199,8 +233,8 @@ export class MessageTemplates {
     const placeholders = template.match(/\{\{([^}]+)\}\}/g) || [];
     const missingKeys: string[] = [];
 
-    placeholders.forEach(placeholder => {
-      const key = placeholder.replace(/[{}]/g, '');
+    placeholders.forEach((placeholder) => {
+      const key = placeholder.replace(/[{}]/g, "");
       if (!(key in data)) {
         missingKeys.push(key);
       }

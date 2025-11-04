@@ -1,5 +1,5 @@
-import * as path from "path";
 import * as fs from "fs/promises";
+import * as path from "path";
 import { fileURLToPath } from "url";
 import type {
   TemplatesConfigIndex,
@@ -30,8 +30,11 @@ export class TemplateConfigManager {
   private currentLogs: string[] = [];
 
   constructor(options?: { cacheDir?: string; reloadInterval?: number }) {
-    // 获取项目根目录（MCP服务器的根目录）
-    const projectRoot = path.resolve(__dirname, "../../../");
+    // 一次性算出 isBuilt 标志和 projectRoot
+    const isBuilt = __dirname.includes("/dist") || __dirname.endsWith("dist");
+    // 打包后：dist/core/config -> ../../../ (scaffold-mcp-server)
+    // 开发环境：src/core/config -> ../../../ (scaffold-mcp-server)
+    const projectRoot = path.resolve(__dirname, "../");
     this.cacheDir =
       options?.cacheDir || path.join(projectRoot, ".template-cache", "config");
     if (options?.reloadInterval) this.reloadInterval = options.reloadInterval;
@@ -110,17 +113,18 @@ export class TemplateConfigManager {
       "[TemplateConfigManager] 内存缓存过期或不存在，开始智能配置加载策略"
     );
 
-    // 获取项目根目录
-    const projectRoot = path.resolve(__dirname, "../../../");
+    // 计算路径
+    const isBuilt = __dirname.includes("/dist") || __dirname.endsWith("dist");
+    // 无论打包还是开发环境，都向上3级到 scaffold-mcp-server
+    const projectRoot = path.resolve(__dirname, "../");
     this.addLog(`[TemplateConfigManager] 项目根目录: ${projectRoot}`);
     this.addLog(`[TemplateConfigManager] 当前工作目录: ${process.cwd()}`);
 
-    // 1. 读取本地配置文件
-    const localPath = path.join(
-      projectRoot,
-      "scaffold-template",
-      "templates.config.json"
-    );
+    // 根据运行环境调整本地模板路径
+    const localTemplatePath = isBuilt
+      ? path.resolve(__dirname, "../../../dist/scaffold-template")
+      : path.resolve(__dirname, "../../../scaffold-template");
+    const localPath = path.join(localTemplatePath, "templates.config.json");
     this.addLog(
       `[TemplateConfigManager] 步骤1: 读取本地配置文件: ${localPath}`
     );
@@ -379,6 +383,33 @@ export class TemplateConfigManager {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.addLog(`[TemplateConfigManager] ❌ 文件读取失败: ${errorMsg}`);
+      
+      // 尝试备用路径
+      if (filePath.includes("scaffold-template") || filePath.includes("templates.config.json")) {
+        const backupPath = path.join(
+          path.dirname(__dirname),
+          "scaffold-mcp-server",
+          "dist",
+          "scaffold-template",
+          "templates.config.json"
+        );
+        
+        if (backupPath !== filePath) {
+          this.addLog(`[TemplateConfigManager] 尝试备用路径: ${backupPath}`);
+          try {
+            const backupContent = await fs.readFile(backupPath, "utf-8");
+            const backupParsed = JSON.parse(backupContent);
+            this.addLog(
+              `[TemplateConfigManager] ✅ 备用路径文件读取成功 (大小: ${backupContent.length} 字节)`
+            );
+            return backupParsed;
+          } catch (backupErr) {
+            const backupErrorMsg = backupErr instanceof Error ? backupErr.message : String(backupErr);
+            this.addLog(`[TemplateConfigManager] ❌ 备用路径读取失败: ${backupErrorMsg}`);
+          }
+        }
+      }
+      
       return null;
     }
   }

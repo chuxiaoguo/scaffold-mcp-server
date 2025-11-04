@@ -32,22 +32,49 @@ export class TemplateSync {
 
   constructor() {
     // 使用 ES 模块兼容的方式确定项目根目录
-    // 假设这个文件位于 src/core/sync/ 目录下
-    this.projectRoot = path.resolve(__dirname, "../../../");
+    const isBuilt = __dirname.includes("/dist") || __dirname.endsWith("dist");
 
-    // 模板目录始终在项目根目录下的scaffold-template
-    this.templateDir = path.join(this.projectRoot, "scaffold-template");
+    // 打包后：dist -> ../ 到 scaffold-mcp-server
+    // 开发环境：src/core/sync -> ../../ 到 scaffold-mcp-server
+    this.projectRoot = isBuilt
+      ? path.resolve(__dirname, "../")
+      : path.resolve(__dirname, "../../");
+
+    console.error(`[DEBUG] TemplateSync.__dirname: ${__dirname}`);
+    console.error(`[DEBUG] TemplateSync.projectRoot: ${this.projectRoot}`);
+    console.error(`[DEBUG] TemplateSync.isBuilt: ${isBuilt}`);
+
+    if (isBuilt) {
+      // 打包后的环境：dist/scaffold-template
+      this.templateDir = path.join(
+        this.projectRoot,
+        "dist",
+        "scaffold-template"
+      );
+    } else {
+      // 开发环境：scaffold-template（项目根目录）
+      this.templateDir = path.join(this.projectRoot, "scaffold-template");
+    }
+
+    console.error(`[DEBUG] TemplateSync.templateDir: ${this.templateDir}`);
+
     this.templatesConfigPath = path.join(
       this.templateDir,
       "templates.config.json"
     );
-    
-    // 修复路径问题：在打包后，配置文件应该在 dist/config/ 目录下
-    // 而不是 src/config/ 目录下
-    const configDir = existsSync(path.join(this.projectRoot, "dist")) 
+
+    console.error(
+      `[DEBUG] TemplateSync.templatesConfigPath: ${this.templatesConfigPath}`
+    );
+
+    // 远程配置文件路径
+    const configDir = isBuilt
       ? path.join(this.projectRoot, "dist", "config")
       : path.join(this.projectRoot, "src", "config");
     this.remoteConfigPath = path.join(configDir, "templateConfig.json");
+    console.error(
+      `[DEBUG] TemplateSync.remoteConfigPath: ${this.remoteConfigPath}`
+    );
   }
 
   private addLog(message: string): void {
@@ -140,18 +167,39 @@ export class TemplateSync {
     }
   }
 
-  /**
-   * 读取本地配置文件
-   */
   private async readLocalConfig(): Promise<TemplatesConfigIndex | null> {
     try {
-      const configExists = await this.pathExists(this.templatesConfigPath);
+      this.addLog(
+        `[TemplateSync] 尝试读取本地配置: ${this.templatesConfigPath}`
+      );
+      let configExists = await this.pathExists(this.templatesConfigPath);
+      let configPath = this.templatesConfigPath;
+
+      // 如果主路径不存在，尝试备用路径
       if (!configExists) {
-        this.addLog("[TemplateSync] 本地配置文件不存在");
+        // 备用路径1：直接在 scaffold-template 目录
+        const backupPath1 = path.join(
+          path.dirname(this.projectRoot),
+          "scaffold-mcp-server",
+          "dist",
+          "scaffold-template",
+          "templates.config.json"
+        );
+        if (await this.pathExists(backupPath1)) {
+          configPath = backupPath1;
+          configExists = true;
+          this.addLog(`[TemplateSync] 使用备用路径: ${backupPath1}`);
+        }
+      }
+
+      if (!configExists) {
+        this.addLog(
+          `[TemplateSync] 本地配置文件不存在: ${this.templatesConfigPath}`
+        );
         return null;
       }
 
-      const content = await fs.readFile(this.templatesConfigPath, "utf-8");
+      const content = await fs.readFile(configPath, "utf-8");
       const config = JSON.parse(content) as TemplatesConfigIndex;
       this.addLog(`[TemplateSync] 本地配置读取成功，版本: ${config.version}`);
       return config;

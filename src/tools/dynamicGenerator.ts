@@ -1,19 +1,19 @@
-import { getUnifiedInjectorManager } from "../core/injectors/unified/index.js";
+import { PromptBuilder, type PromptConfig } from "../core/PromptBuilder.js";
 import { type TemplateResult } from "./templateDownloader.js";
-import type { TechStack, UnifiedInjectionContext } from "../types/index.js";
+import type { TechStack } from "../types/index.js";
 
 /**
- * 从非固定模板生成项目（动态生成路径）
- * 使用统一注入系统，支持所有层级的工具注入
+ * 生成项目构建提示词（替代原有的动态生成逻辑）
+ * 将技术栈配置转换为结构化的提示词，交由 LLM 自主构建项目
  */
-export async function generateFromNonFixedTemplate(
+export async function generatePromptForDynamicTemplate(
   techStack: TechStack,
   projectName: string,
   extraTools: string[] = [],
   logs: string[] = []
-): Promise<TemplateResult> {
-  logs.push(`🔧 使用动态生成模式（统一注入系统）...`);
-  console.log(`🔧 使用动态生成模式（统一注入系统）...`);
+): Promise<string> {
+  logs.push(`🎯 生成动态项目构建提示词...`);
+  console.log(`🎯 生成动态项目构建提示词...`);
 
   try {
     // 1. 解析技术栈为工具集
@@ -30,57 +30,63 @@ export async function generateFromNonFixedTemplate(
     logs.push(`   - 完整工具集: ${allTools.join(", ")}`);
     console.log(`   - 完整工具集: ${allTools.join(", ")}`);
 
-    // 3. 准备注入上下文
-    const context: UnifiedInjectionContext = {
+    // 3. 构建提示词配置
+    const promptConfig: PromptConfig = {
       projectName,
-      projectPath: ".", // 将在外部处理路径
-      files: {},
-      packageJson: {
-        name: projectName,
-        version: "1.0.0",
-        private: true,
-      },
       tools: allTools,
-      logs: [],
+      ...(techStack.framework && { framework: techStack.framework }),
+      ...(techStack.builder && { builder: techStack.builder }),
+      ...(techStack.language && { language: techStack.language }),
+      ...(techStack.ui && { ui: techStack.ui }),
+      ...(techStack.style && { style: techStack.style }),
+      ...(techStack.router && { router: techStack.router }),
+      ...(techStack.state && { state: techStack.state }),
     };
 
-    // 添加可选字段
-    if (techStack.framework) {
-      context.framework = techStack.framework;
-    }
-    if (techStack.builder) {
-      context.buildTool = techStack.builder;
-    }
-    if (techStack.language) {
-      context.language = techStack.language;
-    }
-    if (techStack) {
-      context.techStack = techStack;
-    }
+    // 4. 生成结构化提示词
+    logs.push(`   - 正在构建结构化提示词...`);
+    const prompt = await PromptBuilder.build(promptConfig);
+    logs.push(`✅ 提示词生成完成`);
+    logs.push(`   - 提示词长度: ${prompt.length} 字符`);
+    console.log(`✅ 提示词生成完成`);
+    console.log(`   - 提示词长度: ${prompt.length} 字符`);
 
-    // 4. 执行统一注入
-    const manager = getUnifiedInjectorManager();
-    const result = await manager.injectAll(context);
-
-    if (!result.success) {
-      throw new Error(`注入失败: ${result.errors?.join(", ")}`);
-    }
-
-    logs.push(`✅ 动态生成完成`);
-    logs.push(`   - 文件数量: ${Object.keys(result.files).length}`);
-    logs.push(...result.logs);
-    console.log(`✅ 动态生成完成`);
-    console.log(`   - 文件数量: ${Object.keys(result.files).length}`);
-
-    return {
-      files: result.files,
-      packageJson: result.packageJson,
-    };
+    return prompt;
   } catch (error) {
-    logs.push(`❌ 动态生成失败: ${error}`);
-    console.error(`❌ 动态生成失败:`, error);
+    logs.push(`❌ 提示词生成失败: ${error}`);
+    console.error(`❌ 提示词生成失败:`, error);
     throw error;
   }
+}
+
+/**
+ * 保留旧函数名作为兼容性导出（标记为废弃）
+ * @deprecated 使用 generatePromptForDynamicTemplate 替代
+ */
+export async function generateFromNonFixedTemplate(
+  techStack: TechStack,
+  projectName: string,
+  extraTools: string[] = [],
+  logs: string[] = []
+): Promise<TemplateResult> {
+  // 生成提示词
+  const prompt = await generatePromptForDynamicTemplate(
+    techStack,
+    projectName,
+    extraTools,
+    logs
+  );
+
+  // 返回空的模板结果，提示词将在上层处理
+  return {
+    files: {},
+    packageJson: {
+      name: projectName,
+      version: "1.0.0",
+      description: `动态生成项目 - 请使用提示词构建`,
+    },
+    prompt, // 附加提示词字段
+  } as TemplateResult & { prompt: string };
 }
 
 /**
